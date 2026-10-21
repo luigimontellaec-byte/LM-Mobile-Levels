@@ -139,7 +139,7 @@
 
 
     .waitWhy{font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
-    /* v4.0: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
+    /* v4.1: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
     #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
     .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
     .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
@@ -170,7 +170,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.0</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.1</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -645,9 +645,11 @@
     const atr5=atr(closedBars('M5'),14)||state.pointSize*20;
     const buffer=Math.max(state.pointSize*2,spread*.2,atr5*.01);
     const levels=state.levels.filter(l=>l.score>=3.2 && Number.isFinite(l.price));
+    // Il prezzo deve provenire dal lato opposto della zona di tolleranza.
+    // Un semplice contatto non e' un attraversamento live.
     const crossed=levels.filter(l=>
-      live>l.price+buffer && ref<=l.price+buffer ||
-      live<l.price-buffer && ref>=l.price-buffer
+      (ref<l.price-buffer && live>l.price+buffer) ||
+      (ref>l.price+buffer && live<l.price-buffer)
     ).sort((a,b)=>Math.abs(a.price-live)-Math.abs(b.price-live));
     const chosen=crossed[0];
     if(!chosen) return null;
@@ -676,22 +678,17 @@
     const m15=trendContext('M15'), h1=trendContext('H1');
     const bias15=contextDirection(m15), biasH1=contextDirection(h1);
     const set=(id,text,cls='neutral')=>{ const el=$(id); el.textContent=text||''; el.className=`planrow ${cls}`; };
-    // Attenzione: la conferma della candela chiusa prevale sulla sola lettura della quotazione.
+    // Il livello attraversato puo' essersi spostato dall'altro lato del prezzo.
+    // Le etichette SUPPORTO e RESISTENZA derivano SEMPRE dal prezzo live corrente.
+    // Un attraversamento intrabar non trasforma il candidato M5 in un ordine eseguibile.
     if(cross){
-      if(cross.side==='UP'){
-        // Il livello era sopra la chiusura M5 precedente: e' una resistenza
-        // tentativamente superata, non ancora un breakout BUY confermato.
-        set('planPrimary',`TENTATIVO sopra resistenza ${fmt(cross.level.price)} · M5 NON confermata`,'buy');
-        set('planSecondary','BUY: attendi chiusura M5 sopra la quota e retest valido.','neutral');
-      } else {
-        // Il livello e' sopra il prezzo live: adesso e' RESISTENZA.
-        // Non definirlo "supporto rotto" e non suggerire un SELL breakout qui.
-        set('planPrimary',`RIENTRO sotto ${fmt(cross.level.price)} · ora resistenza`,'neutral');
-        set('planSecondary',support?
-          `SELL breakout solo sotto SUPPORTO ${fmt(support.price)}, dopo M5 + retest.`:
-          'SELL breakout: serve prima identificare un supporto sotto il prezzo.','neutral');
-      }
-      set('planRisk','Attraversamento live: nessuna rottura confermata finché non chiude M5.','neutral');
+      const direction=cross.side==='UP'?'al rialzo':'al ribasso';
+      set('planPrimary',`WAIT · Attraversamento ${direction} di ${fmt(cross.level.price)} · M5 NON confermata`,'neutral');
+      const limits=[];
+      if(support) limits.push(`SUPPORTO ${fmt(support.price)}`);
+      if(resistance) limits.push(`RESISTENZA ${fmt(resistance.price)}`);
+      set('planSecondary',`${limits.length?limits.join(' · ')+' · ':''}attendi chiusura M5 e retest prima di valutare un ingresso.`,'neutral');
+      set('planRisk','Il prezzo live da solo non conferma un breakout BUY o SELL.','neutral');
       return;
     }
     if(s && (s.side==='BUY'||s.side==='SELL') && s.score>=75){
@@ -869,19 +866,29 @@
     return parts.join(' · ');
   }
 
+  // Mostra BUY/SELL solo se il segnale e' confermato. Un SETUP in attesa
+  // resta sempre WAIT, anche se la direzione candidata e' SELL o BUY.
+  function visibleSignalStatus(s,crossing){
+    if(crossing) return {side:'WAIT',name:'WAIT · M5 DA CONFERMARE'};
+    if(!s||s.side==='WAIT')return {side:'WAIT',name:s?.name?.startsWith('WAIT')?s.name:'WAIT'};
+    if((s.side==='BUY'||s.side==='SELL')&&s.score>=75)
+      return {side:s.side,name:s.name||s.side};
+    return {side:'WAIT',name:'WAIT'};
+  }
   function renderSignal(){
     const s=state.signal;
     if(!s){ $('signalName').textContent='WAIT'; $('signalName').className='signalname wait'; $('signalBadge').textContent='M5 · —/100'; $('signalBias').textContent='NEUTRO'; $('signalBias').className='bias-neutral'; $('signalWhy').textContent='Attendo dati e livelli.'; $('scoreWhy').innerHTML='<b>MOTIVO PUNTEGGIO</b><br>Attendo calcolo…'; renderPlan(); return; }
-    const cls=s.side==='BUY'?'buy':s.side==='SELL'?'sell':'wait';
-    const bias=biasFromSignal(s);
-    $('signalBias').textContent=bias.text; $('signalBias').className=bias.cls;
     const crossing=liveLevelEvent();
+    const display=visibleSignalStatus(s,crossing);
+    const cls=display.side==='BUY'?'buy':display.side==='SELL'?'sell':'wait';
+    const bias=crossing?{text:'NEUTRO',cls:'bias-neutral'}:biasFromSignal(s);
+    $('signalBias').textContent=bias.text; $('signalBias').className=bias.cls;
     $('signalWhy').textContent=crossing?
       (crossing.side==='UP'?
-        `Test live della resistenza ${fmt(crossing.level.price)}: chiusura M5 da verificare.`:
-        `Rientro live sotto ${fmt(crossing.level.price)} (ora resistenza): NON è breakout SELL.`):shortWhy(s);
+        `Quota ${fmt(crossing.level.price)} superata live: ora sotto al prezzo, conferma M5 necessaria.`:
+        `Quota ${fmt(crossing.level.price)} attraversata al ribasso: ora sopra al prezzo, conferma M5 necessaria.`):shortWhy(s);
     $('scoreWhy').innerHTML=`<b>MOTIVO PUNTEGGIO</b><br>${escapeHtml(breakdownText(s))}`;
-    $('signalName').textContent=s.name||s.side;
+    $('signalName').textContent=display.name;
     $('signalName').className=`signalname ${cls}`;
     $('signalBadge').textContent='M5 · STABILE';
     $('signalZone').textContent=s.zone||'—';
@@ -1030,13 +1037,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v4.0 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v4.1 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v4.0 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v4.1 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1551,7 +1558,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v4.0 · Host: ${err?.message||err}`);
+      showDiag(`v4.1 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
