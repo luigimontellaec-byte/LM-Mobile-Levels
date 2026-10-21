@@ -141,11 +141,12 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.2</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.3</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
-  <div id="diagTop" class="diag hidden"></div>
+  <div id="diagTop" class="diag hidden" role="status" aria-live="polite"></div>
+  <div id="startupRecovery" class="hidden" style="margin:0 0 10px"><button id="reconnectBtn" type="button" class="btn" style="width:100%;border-color:var(--blue)">↻ Riprova connessione</button></div>
 
   <div class="hero">
     <div class="symbolrow"><div id="symbolName" class="symbol">—</div><div id="currentPrice" class="price">—</div></div>
@@ -240,15 +241,49 @@
  </div>
 </div>
 
+<!-- Controllo avvio indipendente dall'SDK: copre moduli CDN che non caricano. -->
+<script>
+(function(){
+ const phase={moduleStarted:false,hostConnected:false,finished:false};
+ window.__lmBootPhase=phase;
+ const el=id=>document.getElementById(id);
+ function fail(message){
+   if(phase.finished)return;
+   const st=el('statusText'), dot=el('dot'), diag=el('diagTop'), recovery=el('startupRecovery');
+   if(st)st.textContent='Connessione non riuscita';
+   if(dot)dot.className='dot err';
+   if(diag){diag.textContent=message;diag.classList.remove('hidden');}
+   if(recovery)recovery.classList.remove('hidden');
+ }
+ window.__lmReportBootError=fail;
+ el('reconnectBtn')?.addEventListener('click',()=>window.location.reload());
+ window.addEventListener('error',event=>{
+   if(!phase.hostConnected) fail('Errore avvio: '+(event.message || 'risorsa SDK non caricata')+'. Tocca Riprova connessione.');
+ });
+ window.addEventListener('unhandledrejection',event=>{
+   if(!phase.hostConnected) fail('Errore comunicazione SDK: '+(event.reason?.message||String(event.reason||'sconosciuto')));
+ });
+ setTimeout(()=>{
+   if(phase.hostConnected)return;
+   fail(phase.moduleStarted
+     ?'cTrader non ha risposto alla registrazione del plugin entro 18 secondi. Chiudi e riapri il plugin, poi prova Riprova connessione.'
+     :'Impossibile avviare il modulo JavaScript del plugin. Verifica la connessione Internet e il caricamento delle librerie esterne, poi premi Riprova connessione.');
+ },18000);
+})();
+</script>
 <script type="module">
   import { createClientAdapter } from "https://esm.sh/@spotware-web-team/sdk-external-api";
-  import {
-    getLightSymbolList, getSymbol, getTrendbarList, createNewOrder, executionEvent,
-    handleConfirmEvent, quoteEvent, registerEvent, subscribeQuotes, ServerInterfaces
-  } from "https://esm.sh/@spotware-web-team/sdk";
+  // Mantieni le stesse importazioni di lettura della v3.0 funzionante.
+  // Le nuove funzioni di trading sono recuperate opzionalmente dal namespace:
+  // se assenti, non devono bloccare tutto il modulo prima della connessione.
+  import * as CTraderSdk from "https://esm.sh/@spotware-web-team/sdk";
+  const {getLightSymbolList,getSymbol,getTrendbarList,handleConfirmEvent,
+         quoteEvent,registerEvent,subscribeQuotes,ServerInterfaces} = CTraderSdk;
   import { take, catchError, firstValueFrom, timeout } from "https://esm.sh/rxjs";
   import { createLogger } from "https://esm.sh/@veksa/logger";
 
+  window.__lmBootPhase.moduleStarted=true;
+  document.getElementById('statusText').textContent='Avvio SDK…';
   const qs = new URLSearchParams(location.search);
   const initialSymbol = (qs.get('symbol') || 'XAUUSD').trim().toUpperCase();
   const theme = (qs.get('theme') || 'dark').toLowerCase();
@@ -929,13 +964,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v3.1 · Dati esclusivamente da cTrader. Segnali LIMIT indicativi; nessun ordine inviato.`;
+      $('notice').textContent=`v3.3 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v3.1 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v3.3 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1150,6 +1185,7 @@
   const orderFingerprint=p=>[state.symbolId,p.side,p.tf,p.entry,p.sl,p.tp1].join('|');
   function orderReady(p){
     if(!state.connected || state.orderBusy || !state.adapter || !Number.isFinite(state.symbolId)) return 'cTrader non pronto';
+    if(typeof CTraderSdk.createNewOrder!=='function') return 'Trading SDK non disponibile';
     if(!p || !state.pending.some(x=>orderFingerprint(x)===orderFingerprint(p))) return 'Setup non piu\u0300 disponibile: aggiorna';
     if(Date.now()-state.lastQuoteAt>10000 || !(state.bid>0&&state.ask>state.bid)) return 'Quote non aggiornate';
     const minGap=Math.max(state.pointSize*4,(state.ask-state.bid)*1.5);
@@ -1229,7 +1265,8 @@
         label:'LMLEVELS',comment:`LM Levels ${d.tf} score ${d.score}`};
       // Blocca duplicati anche in caso di timeout: una risposta tardiva puo\u0300 comunque creare un ordine.
       state.submittedKeys.add(d.key);
-      const result=await firstValueFrom(createNewOrder(state.adapter,req).pipe(take(1),timeout({first:14000})));
+      if(typeof CTraderSdk.createNewOrder!=='function') throw Error('SDK trading non disponibile: invio disabilitato.');
+      const result=await firstValueFrom(CTraderSdk.createNewOrder(state.adapter,req).pipe(take(1),timeout({first:14000})));
       const error=getField(result,['errorCode','error','description']);
       if(error) throw Error(String(error));
       const id=getField(getField(result,['order'])||{},['orderId']);
@@ -1251,10 +1288,15 @@
       const logger=createLogger(location.href.includes('showLogs'));
       state.adapter=createClientAdapter({logger});
       handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
-      await firstValueFrom(registerEvent(state.adapter).pipe(take(1),catchError(err=>{throw err})));
+      setStatus('Collegamento a cTrader…');
+      await firstValueFrom(registerEvent(state.adapter).pipe(take(1),timeout({first:12000}),catchError(err=>{throw err})));
       handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
-      state.connected=true; setStatus('Host connesso · dati da caricare',''); showDiag('');
-      executionEvent(state.adapter).subscribe(ev=>{
+      state.connected=true;
+      window.__lmBootPhase.hostConnected=true;
+      window.__lmBootPhase.finished=true;
+      $('startupRecovery').classList.add('hidden');
+      setStatus('Host connesso · dati da caricare',''); showDiag('');
+      if(typeof CTraderSdk.executionEvent==='function') CTraderSdk.executionEvent(state.adapter).subscribe(ev=>{
         const label=String(getField(getField(ev,['order'])||{},['tradeData'])?.label||'');
         if(label!=='LMLEVELS')return;
         const code=getField(ev,['errorCode']);
@@ -1301,7 +1343,9 @@
       },30000);
     }catch(err){
       console.error(err);setStatus('Host non connesso','err');
-      showDiag(`v3.2 · Host: ${err?.message||err}`);
+      window.__lmBootPhase.finished=false;
+      $('startupRecovery').classList.remove('hidden');
+      showDiag(`v3.3 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Apri questa pagina come plugin dentro cTrader. In un browser normale l’SDK non può collegarsi al tuo account.';
       $('symbolPicker').classList.remove('hidden');
