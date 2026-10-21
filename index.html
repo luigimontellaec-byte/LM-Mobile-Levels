@@ -141,7 +141,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.3</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.4</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -272,15 +272,33 @@
 })();
 </script>
 <script type="module">
-  import { createClientAdapter } from "https://esm.sh/@spotware-web-team/sdk-external-api";
+  import { createClientAdapter } from "https://esm.sh/@spotware-web-team/sdk-external-api@0.0.5";
   // Mantieni le stesse importazioni di lettura della v3.0 funzionante.
   // Le nuove funzioni di trading sono recuperate opzionalmente dal namespace:
   // se assenti, non devono bloccare tutto il modulo prima della connessione.
-  import * as CTraderSdk from "https://esm.sh/@spotware-web-team/sdk";
-  const {getLightSymbolList,getSymbol,getTrendbarList,handleConfirmEvent,
+  import * as CTraderSdk from "https://esm.sh/@spotware-web-team/sdk@0.0.9";
+  // Versioni CDN fissate a quelle del tutorial cTrader ufficiale.
+  // Nelle release piu recenti l'export della conferma puo cambiare nome.
+  const {getLightSymbolList,getSymbol,getTrendbarList,
          quoteEvent,registerEvent,subscribeQuotes,ServerInterfaces} = CTraderSdk;
-  import { take, catchError, firstValueFrom, timeout } from "https://esm.sh/rxjs";
-  import { createLogger } from "https://esm.sh/@veksa/logger";
+  const sendConfirm = typeof CTraderSdk.handleConfirmEvent === 'function'
+    ? CTraderSdk.handleConfirmEvent
+    : CTraderSdk.confirmEvent;
+  function verifySdkBeforeHandshake(){
+    const needed={
+      'conferma host':sendConfirm,
+      'registrazione':registerEvent,
+      'lista simboli':getLightSymbolList,
+      'dettagli simbolo':getSymbol,
+      'storico':getTrendbarList,
+      'quotazioni':quoteEvent,
+      'sottoscrizione':subscribeQuotes
+    };
+    const missing=Object.entries(needed).filter(([,fn])=>typeof fn!=='function').map(([name])=>name);
+    if(missing.length) throw new Error('SDK incompatibile. Funzioni assenti: '+missing.join(', ')+'.');
+  }
+  import { take, catchError, firstValueFrom, timeout } from "https://esm.sh/rxjs@7.8.2";
+  import { createLogger } from "https://esm.sh/@veksa/logger@1.0.6";
 
   window.__lmBootPhase.moduleStarted=true;
   document.getElementById('statusText').textContent='Avvio SDK…';
@@ -964,13 +982,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v3.3 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v3.4 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v3.3 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v3.4 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1285,12 +1303,13 @@
 
   async function connect(){
     try{
+      verifySdkBeforeHandshake();
       const logger=createLogger(location.href.includes('showLogs'));
       state.adapter=createClientAdapter({logger});
-      handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
+      sendConfirm(state.adapter,{}).pipe(take(1)).subscribe();
       setStatus('Collegamento a cTrader…');
       await firstValueFrom(registerEvent(state.adapter).pipe(take(1),timeout({first:12000}),catchError(err=>{throw err})));
-      handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
+      sendConfirm(state.adapter,{}).pipe(take(1)).subscribe();
       state.connected=true;
       window.__lmBootPhase.hostConnected=true;
       window.__lmBootPhase.finished=true;
@@ -1342,12 +1361,12 @@
         }
       },30000);
     }catch(err){
-      console.error(err);setStatus('Host non connesso','err');
+      console.error(err);setStatus(String(err?.message||'').includes('SDK incompatibile')?'SDK incompatibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v3.3 · Host: ${err?.message||err}`);
+      showDiag(`v3.4 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
-      $('notice').textContent='Apri questa pagina come plugin dentro cTrader. In un browser normale l’SDK non può collegarsi al tuo account.';
+      $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
     }
   }
