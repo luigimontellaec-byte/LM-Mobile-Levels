@@ -139,7 +139,7 @@
 
 
     .waitWhy{font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
-    /* v3.9: LIMIT, SL e TP1 sempre in evidenza; controlli tecnici invariati */
+    /* v4.0: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
     #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
     .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
     .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
@@ -161,12 +161,16 @@
     .limitDiag .reasonChip{background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:4px 6px;font-size:10px}
     .limShowMore{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted);background:var(--card);font-size:11px;font-weight:800;margin-top:6px}
     @media(max-width:360px){.limitNumbers strong{font-size:11px}.limitHead em{font-size:8px}.emaConfig input[type=number]{width:41px}}
+
+    .limitsConfig{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 1px 1px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--muted)}
+    .limitsConfig label{font-size:10px;font-weight:700}.limitsConfig .autoCheck{display:flex;align-items:center;gap:4px;min-width:0;flex-wrap:wrap}.autoCheck small{font-size:9px;font-weight:400}.rrControl{display:flex;align-items:center;gap:6px;white-space:nowrap}.rrControl input{width:58px;padding:4px;border:1px solid var(--line);border-radius:5px;background:var(--card2);color:var(--text);font-size:11px;font-weight:800}
+    @media(max-width:360px){.limitsConfig label{font-size:9px}.autoCheck small{display:none}}
   </style>
 </head>
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.9</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.0</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -220,13 +224,14 @@
   <div id="trendMatrix" class="trendMatrix"><div class="placeholder">Attendo dati cTrader…</div></div>
   <div class="emaBox">
     <div><b>M15 ↔ EMA 9</b><div id="emaDistance">— punti</div><small id="emaBandState">Filtro scalping M1/M5 · 50–300 punti</small></div>
-    <div class="emaConfig"><label>Min <input id="minM15" type="number" min="0" step="5" value="50" /></label><label>Max <input id="maxM15" type="number" min="1" step="10" value="300" /></label><label class="check"><input id="useM15" type="checkbox" checked />M1/M5</label></div>
+    <div class="emaConfig"><label>Min <input id="minM15" type="number" min="0" step="5" value="50" /></label><label>Max base <input id="maxM15" type="number" min="1" step="10" value="300" /></label><label class="check"><input id="useM15" type="checkbox" checked />M1/M5</label></div>
   </div>
+  <div class="limitsConfig"><label class="autoCheck"><input id="adaptiveM15" type="checkbox" checked />EMA AUTO ATR <small>(max dinamico)</small></label><label class="rrControl">R:R minimo <input id="minRR" type="number" min="1" max="3" step="0.05" value="1.35" inputmode="decimal" /></label></div>
   <div class="extraHead">SEGNALI LIMIT <span id="limitsCount">—</span></div>
   <div id="limitCards" class="limitCards"><div class="placeholder">Attendo livelli, matrice e quotazioni…</div></div>
   <button id="limitsMoreToggle" class="limShowMore hidden" type="button" aria-expanded="false">Altri setup ▼</button>
   <div id="limitDiagnostics" class="limitDiag" aria-live="polite"><strong>DIAGNOSTICA LIMIT</strong><div class="diagLine">Attendo candele e prezzi live.</div></div>
-  <div class="limitNote">M1/M5 con filtro EMA9 M15; M15/M30 autonomi. I LIMIT sono proposte tecniche: nessun ordine senza conferma.</div>
+  <div class="limitNote">M1/M5 filtrati da EMA9 M15 (ATR adattivo). M15/M30 indipendenti. I LIMIT sono indicativi; ordine solo dopo conferma.</div>
 
   <button id="levelsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra livelli ▼</button>
   <div id="levelsDetails" class="hidden">
@@ -340,7 +345,7 @@
     adapter:null, connected:false, symbolName:initialSymbol, symbolId:null, symbolInfo:null,
     bid:null, ask:null, mid:null, digits:2, pipSize:0.01, pointSize:0.01, levels:[], keyLevels:[],
     lastQuoteAt:0, dataLoadedAt:0, loadingSeq:0, loading:false, loadErrors:[], pending:[],
-    minM15Pts:50, maxM15Pts:300, minLimitScore:65, filterM15:true,
+    minM15Pts:50, maxM15Pts:300, minLimitScore:65, filterM15:true, adaptiveM15:true, minRR:1.35,
     draft:null,orderBusy:false,submittedKeys:new Set(),orderStatus:'',
     barsByTf:{}, maxEachSide:2, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0, analysisPrice:null, lastM5SignalTime:null,
     limitStats:{reasons:{},scanned:0,patterns:0,valid:0,tf:{}}, showMoreLimits:false
@@ -351,7 +356,7 @@
   const PTF = ServerInterfaces?.ProtoTimeframe || {};
   const PTB = ServerInterfaces?.ProtoTrendbarPeriod || {};
   const BAR_TYPE = ServerInterfaces?.ProtoTrendbarType?.REGULAR_OHLC ?? 0;
-  // Timeframe intraday e scalping: volutamente nessun H4/D1/W1.
+  // Timeframe operativi del plugin: M1, M5, M15, M30, H1.
   const TF = [
     {label:'M1',  period:PTF.M1 ?? 1,  legacy:PTB.M1 ?? 1,  responsePeriod:1, minutes:1, count:240, pivot:3, weight:.45},
     {label:'M5',  period:PTF.M5 ?? 5,  legacy:PTB.M5 ?? 5,  responsePeriod:5, minutes:5, count:240, pivot:3, weight:.80},
@@ -1025,13 +1030,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v3.9 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v4.0 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v3.9 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v4.0 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1069,6 +1074,17 @@
     const diff=(current-ctx.ema9)/state.pointSize;
     return {signed:diff,abs:Math.abs(diff),ctx,bar:last,live};
   }
+  // Il max resta configurabile dall'utente; ATR M15 puo' estenderlo, ma
+  // al massimo fino a 2.5x; l'estensione non supera il 70% dell'ATR M15.
+  function emaM15Band(d=distanceM15()){
+    const min=state.minM15Pts, baseMax=Math.max(min+1,state.maxM15Pts);
+    const m15Atr=atr(closedBars('M15'),14);
+    const atrPts=(Number.isFinite(m15Atr)&&state.pointSize>0)?m15Atr/state.pointSize:NaN;
+    const max=state.adaptiveM15 && Number.isFinite(atrPts)
+      ?Math.max(baseMax,Math.min(baseMax*2.5,atrPts*0.70)) :baseMax;
+    return {min,max:Math.round(max),atrPts,ok:!!d&&d.abs>=min&&d.abs<=max,
+      extended:!!d&&d.abs>baseMax,validAtr:Number.isFinite(atrPts)};
+  }
   function priceRound(x){
     // Tick size del broker quando disponibile, altrimenti passo prezzi visualizzato.
     const step=Number.isFinite(state.pointSize)&&state.pointSize>0?state.pointSize:Math.pow(10,-state.digits);
@@ -1089,7 +1105,7 @@
     const reward=side==='BUY'?tp1-entry:entry-tp1;
     if(reward<=Math.max(spread*2,state.pointSize*5)) return null;
     const rr=reward/risk;
-    if(rr<1.35 || rr>8) return null;
+    if(rr<state.minRR || rr>8) return null;
     return {tp1,rr,obstacle:pool[0]};
   }
   function candleReject(b,level,side,a){
@@ -1100,6 +1116,45 @@
     return side==='BUY'?
       b.l<=level+tol && b.c>level && lower>=Math.max(body*.85,range*.24) && b.c>b.l+range*.45:
       b.h>=level-tol && b.c<level && upper>=Math.max(body*.85,range*.24) && b.c<b.h-range*.45;
+  }
+  // SL oltre il punto realmente invalidante (wick / retest / swing locale).
+  // Non avvicinare lo stop soltanto per ottenere artificialmente un buon R:R.
+  function structuralStop(side,bars,entry,proposal,a,spread){
+    const buy=side==='BUY',level=proposal.level?.price;
+    const buffer=Math.max(spread*1.5,a*.12,state.pointSize*5);
+    const recent=bars.slice(-8);
+    const wickBars=bars.slice(-4).filter(b=>level!=null&&candleReject(b,level,side,a));
+    let anchor=NaN, method='';
+    if(proposal.kind.includes('RIFIUTO') && wickBars.length){
+      anchor=buy?Math.min(...wickBars.map(b=>b.l),level):Math.max(...wickBars.map(b=>b.h),level);
+      method='wick rifiuto S/R';
+    } else if(proposal.kind.includes('RETEST') && bars.length>=3){
+      const b=bars.at(-1);
+      anchor=buy?Math.min(b.l,level):Math.max(b.h,level);
+      method='wick retest';
+    } else {
+      // Ultimo swing confermato in prossimita' dell'entrata; se assente,
+      // estremi degli ultimi otto mattoni/candele dello stesso timeframe.
+      const all=pivots(bars.slice(-23),2).filter(p=>buy?p.side==='S'&&p.price<entry:p.side==='R'&&p.price>entry);
+      const close=all.filter(p=>Math.abs(entry-p.price)<=a*2.2);
+      const latest=close.at(-1);
+      const local=buy?Math.min(...recent.map(b=>b.l)):Math.max(...recent.map(b=>b.h));
+      // Non usare uno swing che sarebbe gia' invalidato dalle candele piu' recenti.
+      const validSwing=latest && (buy?local>=latest.price-a*.08:local<=latest.price+a*.08);
+      anchor=validSwing?latest.price:local;
+      method=validSwing?'swing confermato':'estremo recente';
+      // Un pullback EMA21 deve avere lo SL oltre la sua area tecnica.
+      if(proposal.kind.includes('EMA21')){
+        const ema21=trendContext(proposal.tf).ema21;
+        if(Number.isFinite(ema21)) anchor=buy?Math.min(anchor,ema21):Math.max(anchor,ema21);
+      }
+    }
+    if(!Number.isFinite(anchor)|| (buy&&anchor>=entry)||( !buy&&anchor<=entry)) return null;
+    const sl=priceRound(anchor+(buy?-buffer:buffer));
+    const risk=buy?entry-sl:sl-entry;
+    const minRisk=Math.max(spread*3,a*.14,state.pointSize*7);
+    if(!Number.isFinite(risk)||risk<minRisk||risk>a*3.0) return null;
+    return {sl,risk,method};
   }
   function computeLimitSignals(){
     state.pending=[];
@@ -1114,6 +1169,7 @@
     if(!state.lastQuoteAt||Date.now()-state.lastQuoteAt>180000){reject('Quote non aggiornate');return;}
     if(!state.levels.length){reject('Livelli S/R non disponibili');return;}
     const m15=distanceM15();
+    const m15Band=emaM15Band(m15);
     const a5=atr(closedBars('M5'),14),spread=state.ask-state.bid;
     if(!Number.isFinite(a5)||a5<=0){reject('ATR M5 indisponibile');return;}
     if(spread<=0||spread>a5*.18){reject('Spread eccessivo rispetto all’ATR M5');return;}
@@ -1138,13 +1194,12 @@
       if(!Number.isFinite(a)||a<=0){reject('Volatilità non disponibile',label);continue;}
       if(last.h-last.l>2.8*a){reject('Spike su candela chiusa',label);continue;}
       const scalp=label==='M1'||label==='M5';
-      if(scalp&&state.filterM15&&(!m15||m15.abs<state.minM15Pts||m15.abs>state.maxM15Pts)){
-        reject('Distanza M15–EMA9 fuori range',label);continue;
+      if(scalp&&state.filterM15&&!m15Band.ok){
+        reject('Distanza M15–EMA9 fuori range ATR',label);continue;
       }
       const lastN=label==='M1'?20:label==='M5'?16:label==='M15'?12:10;
       const seg=bars.slice(-lastN);
       const low=Math.min(...seg.map(b=>b.l)),high=Math.max(...seg.map(b=>b.h));
-      const pad=Math.max(a*.15,spread*2,state.pointSize*5);
       const reach=Math.max(a*2.1,spread*8);
       if(!Number.isFinite(low)||!Number.isFinite(high)){
         reject('Struttura non leggibile',label);continue;
@@ -1153,6 +1208,12 @@
         stats.scanned++;
         const dir=side==='BUY'?1:-1;
         const localTrend=ownDir===dir;
+        // Oltre il max base: accetta solo scalping nella direzione M15
+        // e con M5 coerente. L'ATR non deve eliminare il filtro trend.
+        if(scalp&&state.filterM15&&m15Band.extended &&
+          (dirs.M15!==dir || (label==='M1'&&dirs.M5!==dir))){
+          reject('Zona EMA estesa: serve M15/M5 concorde',label);continue;
+        }
         const align=Object.entries(dirs).filter(([tf,v])=>tf!==label&&v===dir).length;
         const opposed=Object.entries(dirs).filter(([tf,v])=>tf!==label&&v===-dir).length;
         const levels=state.levels.filter(l=>l.score>=3.2&&Number.isFinite(l.price)&&
@@ -1175,13 +1236,13 @@
           const near=levels.find(l=>Math.abs(l.price-emaValue)<=a*.60);
           if(!recentTouch&&!near)continue;
           const entry=priceRound(near?near.price:emaValue);
-          if(isLiveLimit(side,entry))setups.push({entry,level:near||null,kind:`PULLBACK ${emaName}${near?' + S/R':''}`,quality:bonus+(near?5:0),confirmed:recentTouch});
+          if(isLiveLimit(side,entry))setups.push({entry,level:near||null,kind:`PULLBACK ${emaName}${near?' + S/R':''}`,quality:bonus+(near?5:0),confirmed:recentTouch,tf:label});
         }
 
         // B. Rifiuto di supporto/resistenza verificabile su candele chiuse.
         for(const l of levels.slice(0,10)){
           const confirm=[last,prev,bars.at(-3)].some(b=>candleReject(b,l.price,side,a));
-          if(confirm)setups.push({entry:priceRound(l.price),level:l,kind:'RIFIUTO S/R',quality:19,confirmed:true});
+          if(confirm)setups.push({entry:priceRound(l.price),level:l,kind:'RIFIUTO S/R',quality:19,confirmed:true,tf:label});
         }
 
         // C. Retest dopo breakout: due chiusure oltre il livello e tocco della zona.
@@ -1192,7 +1253,7 @@
             b1.c>=l.price&&b2.c<l.price-buf&&b3.c<l.price;
           const retested=side==='BUY'?b3.l<=l.price+a*.25&&b3.c>l.price+buf*.2:
             b3.h>=l.price-a*.25&&b3.c<l.price-buf*.2;
-          if(b0&&broken&&retested)setups.push({entry:priceRound(l.price),level:l,kind:'BREAKOUT + RETEST',quality:19,confirmed:true});
+          if(b0&&broken&&retested)setups.push({entry:priceRound(l.price),level:l,kind:'BREAKOUT + RETEST',quality:19,confirmed:true,tf:label});
         }
         if(!setups.length){reject('Manca pullback/rifiuto/retest',label);continue;}
         stats.tf[label].patterns+=setups.length;
@@ -1201,10 +1262,10 @@
           const entry=proposal.entry;
           if(!isLiveLimit(side,entry)||entry<=0||Math.abs(ref-entry)>reach){reject('Entrata LIMIT non raggiungibile',label);continue;}
           if(side==='BUY'&&entry<low-a*.38||side==='SELL'&&entry>high+a*.38){reject('Entrata fuori struttura',label);continue;}
-          // Stop al di la' degli estremi del timeframe di origine, non una cifra fissa.
-          const sl=priceRound(side==='BUY'?Math.min(low,entry-a*.6)-pad:Math.max(high,entry+a*.6)+pad);
-          const risk=side==='BUY'?entry-sl:sl-entry;
-          if(risk<spread*3||risk>a*3.5||risk<=0){reject('SL troppo stretto/lontano',label);continue;}
+          // SL oltre la struttura recente, non l'estremo arbitrario di 20 candele.
+          const structure=structuralStop(side,bars,entry,proposal,a,spread);
+          if(!structure){reject('SL strutturale non valido',label);continue;}
+          const {sl,risk}=structure;
           const targets=limitTargets(side,entry,sl,label);
           if(!targets){reject('TP1/rapporto R:R insufficiente',label);continue;}
           // Un controtrend e' ammesso SOLO su pattern S/R provato con livello forte,
@@ -1216,11 +1277,11 @@
           const points=28+localBonus+proposal.quality+(proposal.confirmed?3:0)+
             (proposal.level?Math.min(14,Math.round(proposal.level.score*1.7)):0)+
             Math.min(12,align*4)-Math.min(18,opposed*5)+
-            Math.min(8,Math.floor((targets.rr-1.35)*3));
+            Math.min(8,Math.floor((targets.rr-state.minRR)*3));
           const score=Math.max(0,Math.min(96,Math.round(points)));
           const minScore=proposal.kind==='RIFIUTO S/R'&&!localTrend?Math.max(76,state.minLimitScore):state.minLimitScore;
           if(score<minScore){reject('Punteggio/confluenze insufficienti',label);continue;}
-          const reason=`${proposal.kind} su ${label}; ${localTrend?'trend locale':'rifiuto confermato'}; ${align} TF concordi, ${opposed} contrari. TP1 prima del livello ${fmt(targets.obstacle.price)}.`;
+          const reason=`${proposal.kind} su ${label}; ${localTrend?'trend locale':'rifiuto confermato'}; ${align} TF concordi, ${opposed} contrari. SL: ${structure.method}. TP1 prima del livello ${fmt(targets.obstacle.price)}. R:R ${targets.rr.toFixed(2)}.`;
           stats.tf[label].accepted++;
           stats.valid++;
           candidates.push({side,tf:label,entry,sl,tp1:targets.tp1,rr:targets.rr,score,basis:proposal.kind,reason});
@@ -1270,10 +1331,11 @@
     const d=distanceM15();
     if(!d){$('emaDistance').textContent='Dati M15 assenti';$('emaBandState').textContent='In attesa di EMA9';}
     else {
-      const abs=Math.round(d.abs),ok=abs>=state.minM15Pts&&abs<=state.maxM15Pts;
+      const abs=Math.round(d.abs),band=emaM15Band(d),ok=band.ok;
       $('emaDistance').textContent=`${d.signed>=0?'+':'−'}${abs} punti ${d.signed>=0?'↑':'↓'}`;
       $('emaDistance').style.color=ok?'var(--green)':'var(--amber)';
-      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+(state.filterM15?(ok?'dentro range':'fuori range · M1/M5 sospesi'):'filtro M1/M5 spento');
+      const bandText=state.adaptiveM15?`AUTO ${band.min}–${band.max} pt`:`Fisso ${band.min}–${band.max} pt`;
+      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+bandText+' · '+(state.filterM15?(ok?'valido M1/M5':'M1/M5 sospesi'):'filtro spento');
     }
     const moreBtn=$('limitsMoreToggle');
     if(!state.lastQuoteAt||Date.now()-state.lastQuoteAt>180000){
@@ -1308,7 +1370,7 @@
     const minGap=Math.max(state.pointSize*4,(state.ask-state.bid)*1.5);
     if(p.side==='BUY' && !(p.entry<state.ask-minGap && p.sl<p.entry && p.tp1>p.entry)) return 'Prezzi BUY LIMIT non validi';
     if(p.side==='SELL' && !(p.entry>state.bid+minGap && p.sl>p.entry && p.tp1<p.entry)) return 'Prezzi SELL LIMIT non validi';
-    if(!Number.isFinite(p.rr)||p.rr<1.35 || p.score<state.minLimitScore) return 'RR/punteggio insufficienti';
+    if(!Number.isFinite(p.rr)||p.rr<state.minRR || p.score<state.minLimitScore) return 'RR/punteggio insufficienti';
     if(getField(state.symbolInfo,['enabled'])===false) return 'Simbolo non abilitato al trading';
     // Distanze minime SL/TP dal broker: validate soltanto se espresse in punti.
     if(numValue(getField(state.symbolInfo,['distanceSetIn']))===1){
@@ -1489,7 +1551,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v3.9 · Host: ${err?.message||err}`);
+      showDiag(`v4.0 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
@@ -1499,9 +1561,13 @@
   function updateM15Controls(){
     const min=Math.max(0,Number($('minM15').value)||0),max=Math.max(min+1,Number($('maxM15').value)||300);
     state.minM15Pts=min;state.maxM15Pts=max;state.filterM15=$('useM15').checked;
+    state.adaptiveM15=$('adaptiveM15').checked;
+    const rr=Number(String($('minRR').value).replace(',','.'));
+    state.minRR=Math.min(3,Math.max(1,Number.isFinite(rr)?rr:1.35));
+    $('minRR').value=state.minRR.toFixed(2);
     computeLimitSignals();renderMatrixAndLimits();
   }
-  for(const id of ['minM15','maxM15','useM15']) $(id).addEventListener('change',updateM15Controls);
+  for(const id of ['minM15','maxM15','useM15','adaptiveM15','minRR']) $(id).addEventListener('change',updateM15Controls);
   $('limitsMoreToggle').addEventListener('click',()=>{state.showMoreLimits=!state.showMoreLimits;renderMatrixAndLimits();});
   $('refreshBtn').addEventListener('click',()=>state.symbolName&&loadSymbol(state.symbolName));
   $('moreBtn').addEventListener('click',()=>{state.maxEachSide=state.maxEachSide===2?5:2;$('moreBtn').textContent=state.maxEachSide===5?'Mostra meno livelli':'Mostra più livelli';render();});
