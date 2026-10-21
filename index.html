@@ -136,12 +136,36 @@
     .dialogActions #orderConfirm{background:var(--blue);color:#08111f}
     .dialogActions button:disabled{opacity:.4}
     #orderFeedback{font-size:11px;line-height:1.5;margin-top:9px;white-space:pre-wrap;color:var(--amber)}
+
+
+    /* v3.6: lettura rapida su smartphone, valori importanti sempre leggibili */
+    #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
+    .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
+    .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
+    .signalbox{padding:8px;margin-top:6px}.quickbar{margin-top:5px}.quickcell{padding:5px 7px}
+    .planbox{margin-top:5px;padding:6px 8px}.planrow{font-size:10.5px;line-height:1.2}
+    .tfCell{padding:5px 1px}.tfCell .arrow{font-size:18px}.tfCell small{font-size:9px}
+    .emaBox{padding:7px 8px}.extraHead{margin-top:9px}.limitCard{padding:8px;margin:0}
+    .limitHead{gap:5px}.limitHead b{font-size:12px}.limitHead em{font-size:9px;white-space:nowrap}
+    .limitNumbers{grid-template-columns:repeat(3,minmax(0,1fr));margin:6px 0 4px;gap:4px}
+    .limitNumbers div{padding:6px 4px}.limitNumbers strong{font-size:12px;font-variant-numeric:tabular-nums}
+    .limitReason{font-size:10px;line-height:1.3;margin-top:5px}.limitAction{margin-top:5px}
+    .limitAction .actbtn{padding:9px 6px;min-height:38px}.limitAction small{font-size:9px}
+    .limitSummary{display:flex;gap:5px;align-items:center;justify-content:space-between;margin-top:5px}
+    .limitSummary .limTag{border:1px solid var(--line);border-radius:6px;padding:3px 5px;color:var(--muted);font-size:9px}
+    .limitExtraInfo{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.35}
+    .limitDiag{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;margin-top:6px;font-size:10.5px;line-height:1.45}
+    .limitDiag strong{color:var(--text)}.limitDiag .diagLine{color:var(--muted);margin-top:3px}
+    .limitDiag .reasons{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+    .limitDiag .reasonChip{background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:4px 6px;font-size:10px}
+    .limShowMore{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted);background:var(--card);font-size:11px;font-weight:800;margin-top:6px}
+    @media(max-width:360px){.limitNumbers strong{font-size:11px}.limitHead em{font-size:8px}.emaConfig input[type=number]{width:41px}}
   </style>
 </head>
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.5</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.6</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -198,9 +222,11 @@
     <div><b>M15 ↔ EMA 9</b><div id="emaDistance">— punti</div><small id="emaBandState">Filtro scalping M1/M5 · 50–300 punti</small></div>
     <div class="emaConfig"><label>Min <input id="minM15" type="number" min="0" step="5" value="50" /></label><label>Max <input id="maxM15" type="number" min="1" step="10" value="300" /></label><label class="check"><input id="useM15" type="checkbox" checked />M1/M5</label></div>
   </div>
-  <div class="extraHead">SETUP LIMIT MULTI-TF <span id="limitsCount">—</span></div>
+  <div class="extraHead">MIGLIORI LIMIT · MULTI-TF <span id="limitsCount">—</span></div>
   <div id="limitCards" class="limitCards"><div class="placeholder">Attendo livelli, matrice e quotazioni…</div></div>
-  <div class="limitNote">M1/M5: filtro EMA9 M15 · M15/M30: livelli autonomi. Per inviare un LIMIT usa il pulsante, controlla i dati e conferma. Nessun invio automatico.</div>
+  <button id="limitsMoreToggle" class="limShowMore hidden" type="button" aria-expanded="false">Altri setup ▼</button>
+  <div id="limitDiagnostics" class="limitDiag" aria-live="polite"><strong>DIAGNOSTICA LIMIT</strong><div class="diagLine">Attendo candele e prezzi live.</div></div>
+  <div class="limitNote">M1/M5 filtrati da distanza M15–EMA9; M15/M30 indipendenti. I punteggi indicano confluenza, non probabilità di profitto. Ordini solo con doppia conferma.</div>
 
   <button id="levelsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra livelli ▼</button>
   <div id="levelsDetails" class="hidden">
@@ -316,7 +342,8 @@
     lastQuoteAt:0, dataLoadedAt:0, loadingSeq:0, loading:false, loadErrors:[], pending:[],
     minM15Pts:50, maxM15Pts:300, minLimitScore:65, filterM15:true,
     draft:null,orderBusy:false,submittedKeys:new Set(),orderStatus:'',
-    barsByTf:{}, maxEachSide:2, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0, analysisPrice:null, lastM5SignalTime:null
+    barsByTf:{}, maxEachSide:2, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0, analysisPrice:null, lastM5SignalTime:null,
+    limitStats:{reasons:{},scanned:0,patterns:0,valid:0,tf:{}}, showMoreLimits:false
   };
 
   // Usa gli enum ufficiali dell'SDK quando disponibili.
@@ -944,7 +971,7 @@
       if(!Number.isFinite(newSymbolId)) throw new Error(`ID simbolo non valido per ${getField(hit,['name'])||name}: ${String(getField(hit,['id','symbolId']))}`);
       const symbolChanged=state.symbolId!==newSymbolId;
       state.symbolName=getField(hit,['name'])||name; state.symbolId=newSymbolId;
-      if(symbolChanged){closeOrderDialog();state.bid=null;state.ask=null;state.mid=null;state.levels=[];state.keyLevels=[];state.signal=null;state.pending=[];state.barsByTf={};state.lastQuoteAt=0;state.dataLoadedAt=0;state.analysisPrice=null;render();}
+      if(symbolChanged){closeOrderDialog();state.bid=null;state.ask=null;state.mid=null;state.levels=[];state.keyLevels=[];state.signal=null;state.pending=[];state.limitStats={reasons:{},scanned:0,patterns:0,valid:0,tf:{}};state.barsByTf={};state.lastQuoteAt=0;state.dataLoadedAt=0;state.analysisPrice=null;render();}
       const detail=await firstValueFrom(getSymbol(state.adapter,{symbolId:[state.symbolId]}).pipe(take(1),timeout({first:10000})));
       if(seq!==state.loadingSeq) return;
       state.symbolInfo=repeatedField(detail,['symbol','symbols'])[0]||{};
@@ -984,13 +1011,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v3.5 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v3.6 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v3.5 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v3.6 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1066,15 +1093,24 @@
   }
   function computeLimitSignals(){
     state.pending=[];
-    if(!Number.isFinite(state.bid)||!Number.isFinite(state.ask)||state.ask<=state.bid ||
-       !state.levels.length || !state.lastQuoteAt || Date.now()-state.lastQuoteAt>180000) return;
+    // Queste statistiche indicano condizioni di scarto, non trade ipotetici.
+    const stats={reasons:{},scanned:0,patterns:0,valid:0,tf:{}};
+    state.limitStats=stats;
+    const reject=(why,tag)=>{
+      const label=tag?`${tag}: ${why}`:why;
+      stats.reasons[label]=(stats.reasons[label]||0)+1;
+    };
+    if(!Number.isFinite(state.bid)||!Number.isFinite(state.ask)||state.ask<=state.bid){reject('Quote bid/ask assenti');return;}
+    if(!state.lastQuoteAt||Date.now()-state.lastQuoteAt>180000){reject('Quote non aggiornate');return;}
+    if(!state.levels.length){reject('Livelli S/R non disponibili');return;}
     const m15=distanceM15();
     const a5=atr(closedBars('M5'),14),spread=state.ask-state.bid;
-    if(!Number.isFinite(a5)||a5<=0||spread<=0||spread>a5*.18) return;
+    if(!Number.isFinite(a5)||a5<=0){reject('ATR M5 indisponibile');return;}
+    if(spread<=0||spread>a5*.18){reject('Spread eccessivo rispetto all’ATR M5');return;}
     const m5bars=closedBars('M5');
-    if(m5bars.length<35) return;
+    if(m5bars.length<35){reject('Storico M5 insufficiente');return;}
     const last5=m5bars.at(-1);
-    if(last5.h-last5.l>2.5*a5) return;
+    if(last5.h-last5.l>2.5*a5){reject('Spike sull’ultima M5');return;}
     const ctx=Object.fromEntries(TF.map(t=>[t.label,trendContext(t.label)]));
     const dirs=Object.fromEntries(TF.map(t=>[t.label,contextDirection(ctx[t.label])]));
     const ref=(state.bid+state.ask)/2;
@@ -1082,98 +1118,128 @@
     const minSep=Math.max(spread*1.5,state.pointSize*4);
     const isLiveLimit=(side,price)=>side==='BUY'?price<state.ask-minSep:price>state.bid+minSep;
 
-    // Ogni TF genera idee usando la propria struttura. Gli altri TF sono punteggio,
-    // non un veto assoluto; una inversione controtrend richiede un rejection reale.
     for(const label of ['M1','M5','M15','M30']){
-      const bars=closedBars(label), c=ctx[label], ownDir=dirs[label];
-      if(bars.length<40 || !Number.isFinite(c.ema9)||!Number.isFinite(c.ema21)) continue;
+      const bars=closedBars(label),c=ctx[label],ownDir=dirs[label];
+      stats.tf[label]={patterns:0,accepted:0};
+      if(bars.length<40||!Number.isFinite(c.ema9)||!Number.isFinite(c.ema21)){
+        reject('Storico/EMA insufficienti',label);continue;
+      }
       const a=atr(bars,14),last=bars.at(-1),prev=bars.at(-2);
-      if(!Number.isFinite(a)||a<=0||last.h-last.l>2.8*a) continue;
-      const scalp=(label==='M1'||label==='M5');
-      if(scalp && state.filterM15 && (!m15 || m15.abs<state.minM15Pts || m15.abs>state.maxM15Pts)) continue;
+      if(!Number.isFinite(a)||a<=0){reject('Volatilità non disponibile',label);continue;}
+      if(last.h-last.l>2.8*a){reject('Spike su candela chiusa',label);continue;}
+      const scalp=label==='M1'||label==='M5';
+      if(scalp&&state.filterM15&&(!m15||m15.abs<state.minM15Pts||m15.abs>state.maxM15Pts)){
+        reject('Distanza M15–EMA9 fuori range',label);continue;
+      }
       const lastN=label==='M1'?20:label==='M5'?16:label==='M15'?12:10;
       const seg=bars.slice(-lastN);
-      const low=Math.min(...seg.map(b=>b.l)), high=Math.max(...seg.map(b=>b.h));
+      const low=Math.min(...seg.map(b=>b.l)),high=Math.max(...seg.map(b=>b.h));
       const pad=Math.max(a*.15,spread*2,state.pointSize*5);
       const reach=Math.max(a*2.1,spread*8);
-      if(!Number.isFinite(low)||!Number.isFinite(high)) continue;
+      if(!Number.isFinite(low)||!Number.isFinite(high)){
+        reject('Struttura non leggibile',label);continue;
+      }
       for(const side of ['BUY','SELL']){
+        stats.scanned++;
         const dir=side==='BUY'?1:-1;
         const localTrend=ownDir===dir;
-        const align=Object.entries(dirs).filter(([tf,v])=>tf!==label && v===dir).length;
-        const opposed=Object.entries(dirs).filter(([tf,v])=>tf!==label && v===-dir).length;
-        // Requisito comune: il prezzo deve essere distante il giusto dall'entry.
-        const supports=state.levels.filter(l=>l.score>=3.2 && Number.isFinite(l.price) &&
-          isLiveLimit(side,l.price) && Math.abs(l.price-ref)<=reach*1.4)
+        const align=Object.entries(dirs).filter(([tf,v])=>tf!==label&&v===dir).length;
+        const opposed=Object.entries(dirs).filter(([tf,v])=>tf!==label&&v===-dir).length;
+        const levels=state.levels.filter(l=>l.score>=3.2&&Number.isFinite(l.price)&&
+          isLiveLimit(side,l.price)&&Math.abs(l.price-ref)<=reach*1.4)
           .sort((a,b)=>Math.abs(a.price-c.ema9)-Math.abs(b.price-c.ema9));
         const setups=[];
-        const p9=c.ema9;
-        const closeOk=side==='BUY'?last.c>p9 && c.ema9>c.ema21:last.c<p9 && c.ema9<c.ema21;
+        const p9=c.ema9,p21=c.ema21;
+        const trendOrder=side==='BUY'?p9>p21&&last.c>p21:p9<p21&&last.c<p21;
+        const closeOk=side==='BUY'?last.c>p9&&trendOrder:last.c<p9&&trendOrder;
 
-        // A. Pullback sul TF di origine: EMA9/21 e direzione chiara.
-        if(localTrend && closeOk && isLiveLimit(side,p9) && Math.abs(ref-p9)<=reach &&
-           (side==='BUY'?p9>=low-a*.20:p9<=high+a*.20)){
-          const near=supports.find(l=>Math.abs(l.price-p9)<=a*.65);
-          const entry=near?priceRound(near.price):priceRound(p9);
-          if(isLiveLimit(side,entry)) setups.push({entry,level:near||null,kind:near?'SUP/RES + EMA9':'PULLBACK EMA9',quality:near?14:8});
+        // A. Pullback EMA9 o EMA21 nel trend locale, con conferma della candela chiusa.
+        // EMA21 non richiede la stessa distanza EMA9: e' un ritracciamento piu' profondo.
+        for(const [emaValue,emaName,bonus] of [[p9,'EMA9',10],[p21,'EMA21',8]]){
+          if(!localTrend||!trendOrder||!isLiveLimit(side,emaValue)||Math.abs(ref-emaValue)>reach)continue;
+          if(emaName==='EMA9'&&!closeOk)continue;
+          if(side==='BUY'&&emaValue<low-a*.20||side==='SELL'&&emaValue>high+a*.20)continue;
+          const recentTouch=[last,prev,bars.at(-3)].some(b=>b&&
+            (side==='BUY'?b.l<=emaValue+a*.3&&b.c>emaValue:b.h>=emaValue-a*.3&&b.c<emaValue));
+          // Quando non c'e' un tocco recente, serve un livello S/R vicino alla media.
+          const near=levels.find(l=>Math.abs(l.price-emaValue)<=a*.60);
+          if(!recentTouch&&!near)continue;
+          const entry=priceRound(near?near.price:emaValue);
+          if(isLiveLimit(side,entry))setups.push({entry,level:near||null,kind:`PULLBACK ${emaName}${near?' + S/R':''}`,quality:bonus+(near?5:0),confirmed:recentTouch});
         }
 
-        // B. Rejection provato da candela chiusa vicino a livello tecnico.
-        // In controtrend non basta 'prezzo vicino a EMA': serve rifiuto strutturale.
-        for(const l of supports.slice(0,8)){
-          if(candleReject(last,l.price,side,a) || candleReject(prev,l.price,side,a)){
-            setups.push({entry:priceRound(l.price),level:l,kind:'REJECTION S/R',quality:18});
-          }
+        // B. Rifiuto di supporto/resistenza verificabile su candele chiuse.
+        for(const l of levels.slice(0,10)){
+          const confirm=[last,prev,bars.at(-3)].some(b=>candleReject(b,l.price,side,a));
+          if(confirm)setups.push({entry:priceRound(l.price),level:l,kind:'RIFIUTO S/R',quality:19,confirmed:true});
         }
 
-        // C. Breakout + retest: breakout gia' chiuso sul TF, proposta LIMIT sulla zona.
+        // C. Retest dopo breakout: due chiusure oltre il livello e tocco della zona.
         const b0=bars.at(-4),b1=bars.at(-3),b2=bars.at(-2),b3=bars.at(-1);
-        for(const l of supports.slice(0,8)){
+        for(const l of levels.slice(0,10)){
           const buf=Math.max(a*.08,spread,state.pointSize*3);
-          const broken=side==='BUY'?
-            b1.c<=l.price && b2.c>l.price+buf && b3.c>l.price:
-            b1.c>=l.price && b2.c<l.price-buf && b3.c<l.price;
-          const retested=side==='BUY'?
-            b3.l<=l.price+a*.25 && b3.c>l.price+buf*.2:
-            b3.h>=l.price-a*.25 && b3.c<l.price-buf*.2;
-          if(b0 && broken && retested) setups.push({entry:priceRound(l.price),level:l,kind:'BREAKOUT + RETEST',quality:17});
+          const broken=side==='BUY'?b1.c<=l.price&&b2.c>l.price+buf&&b3.c>l.price:
+            b1.c>=l.price&&b2.c<l.price-buf&&b3.c<l.price;
+          const retested=side==='BUY'?b3.l<=l.price+a*.25&&b3.c>l.price+buf*.2:
+            b3.h>=l.price-a*.25&&b3.c<l.price-buf*.2;
+          if(b0&&broken&&retested)setups.push({entry:priceRound(l.price),level:l,kind:'BREAKOUT + RETEST',quality:19,confirmed:true});
         }
-
+        if(!setups.length){reject('Manca pullback/rifiuto/retest',label);continue;}
+        stats.tf[label].patterns+=setups.length;
+        stats.patterns+=setups.length;
         for(const proposal of setups){
           const entry=proposal.entry;
-          if(!isLiveLimit(side,entry) || Math.abs(ref-entry)>reach || entry<=0) continue;
-          if(side==='BUY' && entry<low-a*.38) continue;
-          if(side==='SELL'&& entry>high+a*.38) continue;
+          if(!isLiveLimit(side,entry)||entry<=0||Math.abs(ref-entry)>reach){reject('Entrata LIMIT non raggiungibile',label);continue;}
+          if(side==='BUY'&&entry<low-a*.38||side==='SELL'&&entry>high+a*.38){reject('Entrata fuori struttura',label);continue;}
+          // Stop al di la' degli estremi del timeframe di origine, non una cifra fissa.
           const sl=priceRound(side==='BUY'?Math.min(low,entry-a*.6)-pad:Math.max(high,entry+a*.6)+pad);
           const risk=side==='BUY'?entry-sl:sl-entry;
-          if(risk<spread*3 || risk>a*3.5 || risk<=0) continue;
+          if(risk<spread*3||risk>a*3.5||risk<=0){reject('SL troppo stretto/lontano',label);continue;}
           const targets=limitTargets(side,entry,sl,label);
-          if(!targets) continue;
+          if(!targets){reject('TP1/rapporto R:R insufficiente',label);continue;}
+          // Un controtrend e' ammesso SOLO su pattern S/R provato con livello forte,
+          // evitando che la stessa EMA si trasformi in un segnale inverso arbitrario.
+          if(!localTrend&&!proposal.kind.includes('RIFIUTO S/R')){reject('Trend locale contrario',label);continue;}
+          if(ownDir===-dir&&(proposal.level?.score||0)<6.3){reject('Inversione senza livello forte',label);continue;}
+          if(scalp&&dirs.H1===-dir&&opposed>=3){reject('Troppi TF contrari per scalping',label);continue;}
           const localBonus=localTrend?21:ownDir===0?9:0;
-          // Una rejection controtrend e' ammessa solo con conferma forte e stop non lontano.
-          if(!localTrend && proposal.kind!=='REJECTION S/R') continue;
-          if(ownDir===-dir && (proposal.level?.score||0)<6.3) continue;
-          const h1Conflict=dirs.H1===-dir;
-          if(scalp && h1Conflict && opposed>=3) continue;
-          const points=29+localBonus+proposal.quality+
+          const points=28+localBonus+proposal.quality+(proposal.confirmed?3:0)+
             (proposal.level?Math.min(14,Math.round(proposal.level.score*1.7)):0)+
             Math.min(12,align*4)-Math.min(18,opposed*5)+
-            Math.min(7,Math.floor((targets.rr-1.35)*3));
+            Math.min(8,Math.floor((targets.rr-1.35)*3));
           const score=Math.max(0,Math.min(96,Math.round(points)));
-          const minScore=proposal.kind==='REJECTION S/R'&&!localTrend?Math.max(76,state.minLimitScore):state.minLimitScore;
-          if(score<minScore) continue;
-          const reason=`${proposal.kind} ${label}; ${localTrend?'trend locale concorde':'rifiuto strutturale confermato'}; ${align} TF concordi, ${opposed} contrari; TP1 prima di ${fmt(targets.obstacle.price)}.`;
+          const minScore=proposal.kind==='RIFIUTO S/R'&&!localTrend?Math.max(76,state.minLimitScore):state.minLimitScore;
+          if(score<minScore){reject('Punteggio/confluenze insufficienti',label);continue;}
+          const reason=`${proposal.kind} su ${label}; ${localTrend?'trend locale':'rifiuto confermato'}; ${align} TF concordi, ${opposed} contrari. TP1 prima del livello ${fmt(targets.obstacle.price)}.`;
+          stats.tf[label].accepted++;
+          stats.valid++;
           candidates.push({side,tf:label,entry,sl,tp1:targets.tp1,tp2:targets.tp2,rr:targets.rr,score,basis:proposal.kind,reason});
         }
       }
     }
-    candidates.sort((a,b)=>b.score-a.score || (b.rr-a.rr));
+    candidates.sort((a,b)=>b.score-a.score||(b.rr-a.rr));
+    // Un miglior BUY ed un miglior SELL, poi altre idee in ordine di merito.
+    // Deduplica zone troppo vicine per non mostrare lo stesso ordine 3 volte.
+    for(const side of ['BUY','SELL']){
+      const c=candidates.find(x=>x.side===side);
+      if(c)state.pending.push(c);
+    }
     for(const c of candidates){
-      if(state.pending.length>=4) break;
-      if(state.pending.some(x=>x.side===c.side &&
-         Math.abs(x.entry-c.entry)<Math.max(a5*.2,spread*3))) continue;
+      if(state.pending.length>=4)break;
+      if(state.pending.some(x=>x===c||(x.side===c.side&&
+        Math.abs(x.entry-c.entry)<Math.max(a5*.2,spread*3))))continue;
       state.pending.push(c);
     }
+  }
+  function renderLimitDiagnostics(){
+    const el=$('limitDiagnostics');
+    const st=state.limitStats||{reasons:{},scanned:0,patterns:0,valid:0,tf:{}};
+    const ordered=Object.entries(st.reasons).sort((a,b)=>b[1]-a[1]);
+    const label=state.pending.length?'FILTRI DEI SETUP':'PERCHÉ NESSUN LIMIT?';
+    const summary=`${st.patterns} pattern esaminati · ${st.valid} validi · ${state.pending.length} zone selezionate`;
+    const reasons=ordered.slice(0,4).map(([name,count])=>`<span class="reasonChip">${escapeHtml(name)} <b>×${count}</b></span>`).join('');
+    el.innerHTML=`<strong>${label}</strong><div class="diagLine">${summary}</div>`+
+      (reasons?`<div class="reasons">${reasons}</div>`:'<div class="diagLine">Nessun blocco rilevato nel calcolo corrente.</div>');
   }
   function renderMatrixAndLimits(){
     const contexts=TF.map(t=>({name:t.label,ctx:trendContext(t.label),has:closedBars(t.label).length>=30}));
@@ -1185,19 +1251,32 @@
     const d=distanceM15();
     if(!d){$('emaDistance').textContent='Dati M15 assenti';$('emaBandState').textContent='In attesa di EMA9';}
     else {
-      const abs=Math.round(d.abs);
-      const ok=abs>=state.minM15Pts && abs<=state.maxM15Pts;
+      const abs=Math.round(d.abs),ok=abs>=state.minM15Pts&&abs<=state.maxM15Pts;
       $('emaDistance').textContent=`${d.signed>=0?'+':'−'}${abs} punti ${d.signed>=0?'↑':'↓'}`;
       $('emaDistance').style.color=ok?'var(--green)':'var(--amber)';
-      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+(state.filterM15 ? (ok?'dentro range':'fuori range · M1/M5 sospesi'):'filtro M1/M5 spento');
+      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+(state.filterM15?(ok?'dentro range':'fuori range · M1/M5 sospesi'):'filtro M1/M5 spento');
     }
-    if(!state.lastQuoteAt){$('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Quote bid/ask assenti: non genero prezzi LIMIT.</div>';return;}
-    if(Date.now()-state.lastQuoteAt>180000){$('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Ultima quotazione troppo vecchia: attendere quote aggiornate.</div>';return;}
-    $('limitsCount').textContent=`${state.pending.length} setup · M1/M5/M15/M30`;
-    $('limitCards').innerHTML=state.pending.length?state.pending.map((p,ix)=>{
-      const side=p.side.toLowerCase();
-      return `<div class="limitCard ${side}"><div class="limitHead"><b>${p.side} LIMIT · ${p.tf}</b><em>Confluenza ${p.score}/100 · RR ${p.rr.toFixed(2)}</em></div><div class="limitNumbers"><div><small>ENTRY</small><strong>${fmt(p.entry)}</strong></div><div><small>SL</small><strong>${fmt(p.sl)}</strong></div><div><small>TP1</small><strong>${fmt(p.tp1)}</strong></div><div><small>TP2</small><strong>${Number.isFinite(p.tp2)?fmt(p.tp2):'—'}</strong></div></div><div class="limitReason">${escapeHtml(p.reason)}</div><div class="limitAction"><button type="button" class="actbtn" data-order-index="${ix}" ${!state.connected || state.orderBusy ? 'disabled' : ''}>PREPARA ${p.side} LIMIT</button><small>Invio solo dopo conferma</small></div></div>`;
-    }).join(''):'<div class="placeholder">WAIT: nessun LIMIT valido per struttura, conferme e spazio TP1.</div>';
+    const moreBtn=$('limitsMoreToggle');
+    if(!state.lastQuoteAt||Date.now()-state.lastQuoteAt>180000){
+      $('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Attendo quote bid/ask aggiornate: nessun LIMIT proposto.</div>';
+      moreBtn.classList.add('hidden');renderLimitDiagnostics();return;
+    }
+    $('limitsCount').textContent=`${state.pending.length} setup`;
+    // Sempre best BUY e best SELL (se validi); il resto sotto un pulsante.
+    const visibles=state.showMoreLimits?state.pending:state.pending.filter((p,i)=>i<2);
+    $('limitCards').innerHTML=visibles.length?visibles.map(p=>{
+      const ix=state.pending.indexOf(p),side=p.side.toLowerCase();
+      const expireQuote=Date.now()-state.lastQuoteAt>10000;
+      return `<div class="limitCard ${side}"><div class="limitHead"><b>${p.side} LIMIT · ${p.tf}</b><em>${p.score}/100 · ${p.rr.toFixed(2)}R</em></div>`+
+        `<div class="limitNumbers"><div><small>ENTRY</small><strong>${fmt(p.entry)}</strong></div><div><small>SL</small><strong>${fmt(p.sl)}</strong></div><div><small>TP1</small><strong>${fmt(p.tp1)}</strong></div></div>`+
+        `<div class="limitSummary"><span class="limTag">${escapeHtml(p.basis)}</span><span class="limTag">TP2 ${Number.isFinite(p.tp2)?fmt(p.tp2):'—'}</span></div>`+
+        `<div class="limitReason">${escapeHtml(p.reason)}</div>`+
+        `<div class="limitAction"><button type="button" class="actbtn" data-order-index="${ix}" ${!state.connected||state.orderBusy||expireQuote?'disabled':''}>PREPARA ${p.side} LIMIT</button><small>${expireQuote?'Quote da aggiornare':'Conferma obbligatoria'}</small></div></div>`;
+    }).join(''):'<div class="placeholder">WAIT · Nessun BUY/SELL LIMIT con struttura, SL e TP1 verificati.</div>';
+    moreBtn.classList.toggle('hidden',state.pending.length<=2);
+    moreBtn.textContent=state.showMoreLimits?'Nascondi setup secondari ▲':`Mostra altri ${Math.max(0,state.pending.length-2)} setup ▼`;
+    moreBtn.setAttribute('aria-expanded',state.showMoreLimits?'true':'false');
+    renderLimitDiagnostics();
   }
 
   // Trading SDK - mai inviare richieste senza una conferma umana.
@@ -1206,7 +1285,7 @@
   function orderReady(p){
     if(!state.connected || state.orderBusy || !state.adapter || !Number.isFinite(state.symbolId)) return 'cTrader non pronto';
     if(typeof CTraderSdk.createNewOrder!=='function') return 'Trading SDK non disponibile';
-    if(typeof getTrendbarList!=='function' || !state.dataLoadedAt) return 'Storico non pronto: ordine bloccato';
+    if(typeof getTrendbarList!=='function' || !state.dataLoadedAt || Date.now()-state.dataLoadedAt>20*60000) return 'Storico non recente: aggiorna prima di inviare';
     if(!p || !state.pending.some(x=>orderFingerprint(x)===orderFingerprint(p))) return 'Setup non piu\u0300 disponibile: aggiorna';
     if(Date.now()-state.lastQuoteAt>10000 || !(state.bid>0&&state.ask>state.bid)) return 'Quote non aggiornate';
     const minGap=Math.max(state.pointSize*4,(state.ask-state.bid)*1.5);
@@ -1369,7 +1448,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v3.5 · Host: ${err?.message||err}`);
+      showDiag(`v3.6 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
@@ -1382,6 +1461,7 @@
     computeLimitSignals();renderMatrixAndLimits();
   }
   for(const id of ['minM15','maxM15','useM15']) $(id).addEventListener('change',updateM15Controls);
+  $('limitsMoreToggle').addEventListener('click',()=>{state.showMoreLimits=!state.showMoreLimits;renderMatrixAndLimits();});
   $('refreshBtn').addEventListener('click',()=>state.symbolName&&loadSymbol(state.symbolName));
   $('moreBtn').addEventListener('click',()=>{state.maxEachSide=state.maxEachSide===2?5:2;$('moreBtn').textContent=state.maxEachSide===5?'Mostra meno livelli':'Mostra più livelli';render();});
   $('loadSymbolBtn').addEventListener('click',()=>{const v=$('symbolInput').value.trim();if(v)loadSymbol(v.toUpperCase())});
