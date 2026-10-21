@@ -102,12 +102,46 @@
     .limitReason,.limitNote,.placeholder{font-size:10px;color:var(--muted);line-height:1.4}
     .placeholder{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px}
     .limitNote{margin:5px 2px}
+
+    /* v3.2: leggibilita' e compattezza, senza testi microscopici */
+    #app{padding:6px 8px calc(14px + env(safe-area-inset-bottom))}
+    .top{padding:4px 1px 6px}.brand{font-size:12px}.status{font-size:10px}
+    .hero{padding:9px 10px;border-radius:12px}.symbol{font-size:21px}.price{font-size:20px}
+    .sub{font-size:10px;margin-top:4px;gap:9px}.range{margin-top:7px;gap:6px}.mini{padding:6px 8px}
+    .mini b{font-size:9px}.mini span{font-size:13px}
+    .signalbox{margin-top:7px;padding:9px}.signalname{font-size:16px}.signalbadge{font-size:10px}
+    .quickbar{grid-template-columns:65px 1fr;gap:6px;margin-top:7px}.quickcell{padding:7px}
+    .quickcell b{font-size:9px}.quickcell span{font-size:11px}
+    .planbox{padding:7px 8px;margin-top:6px}.planhead b,.countdown{font-size:9px}
+    .planrow{font-size:11px;line-height:1.22}.detailsbtn{font-size:11px;padding:7px}
+    .tfCell{padding:8px 1px}.tfCell strong{font-size:11px}.tfCell .arrow{font-size:18px}.tfCell small{font-size:9px}
+    .emaBox{padding:8px 9px}.emaBox b{font-size:10px}.emaBox small{font-size:10px}
+    .extraHead{font-size:11px;margin-top:10px}.limitCard{padding:9px}.limitHead b{font-size:13px}
+    .limitNumbers strong{font-size:12px}.limitNumbers small{font-size:9px}
+    .limitReason,.limitNote,.placeholder{font-size:10px}
+    .limitAction{display:flex;align-items:center;gap:8px;margin-top:7px}
+    .limitAction .actbtn{flex:1;background:rgba(104,167,255,.14);border:1px solid var(--blue);color:var(--text);border-radius:9px;padding:10px 7px;font-size:11px;font-weight:900}
+    .limitAction .actbtn:disabled{opacity:.35}
+    .limitAction small{color:var(--muted);font-size:9px;max-width:45%}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;justify-content:center;align-items:center;padding:15px}
+    .dialog{width:100%;max-width:420px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+    .dialog h3{margin:0 0 7px;font-size:16px}.dialog p{margin:6px 0;color:var(--muted);font-size:12px;line-height:1.45}
+    .previewGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:11px 0}
+    .previewGrid div{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px;font-size:11px}
+    .previewGrid b{display:block;font-size:9px;color:var(--muted);margin-bottom:4px}
+    .tradeForm{display:flex;align-items:center;gap:8px;margin-top:8px}.tradeForm label{font-size:11px;flex:1}
+    .tradeForm input{font-size:14px;font-weight:800;width:85px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--text);padding:9px}
+    .dialogActions{display:flex;gap:8px;margin-top:13px}
+    .dialogActions button{flex:1;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--text);padding:11px 8px;font-size:12px;font-weight:850}
+    .dialogActions #orderConfirm{background:var(--blue);color:#08111f}
+    .dialogActions button:disabled{opacity:.4}
+    #orderFeedback{font-size:11px;line-height:1.5;margin-top:9px;white-space:pre-wrap;color:var(--amber)}
   </style>
 </head>
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.0</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.2</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -160,12 +194,12 @@
   <div class="extraHead">MATRICE TREND <span id="dataStatus">Dati non caricati</span></div>
   <div id="trendMatrix" class="trendMatrix"><div class="placeholder">Attendo dati cTrader…</div></div>
   <div class="emaBox">
-    <div><b>M15 ↔ EMA 9</b><div id="emaDistance">— punti</div><small id="emaBandState">Filtro 50–300 punti</small></div>
-    <div class="emaConfig"><label>Min <input id="minM15" type="number" min="0" step="5" value="50" /></label><label>Max <input id="maxM15" type="number" min="1" step="10" value="300" /></label><label class="check"><input id="useM15" type="checkbox" checked />Filtro</label></div>
+    <div><b>M15 ↔ EMA 9</b><div id="emaDistance">— punti</div><small id="emaBandState">Filtro scalping M1/M5 · 50–300 punti</small></div>
+    <div class="emaConfig"><label>Min <input id="minM15" type="number" min="0" step="5" value="50" /></label><label>Max <input id="maxM15" type="number" min="1" step="10" value="300" /></label><label class="check"><input id="useM15" type="checkbox" checked />M1/M5</label></div>
   </div>
-  <div class="extraHead">ORDINI LIMIT SUGGERITI <span id="limitsCount">—</span></div>
+  <div class="extraHead">SETUP LIMIT MULTI-TF <span id="limitsCount">—</span></div>
   <div id="limitCards" class="limitCards"><div class="placeholder">Attendo livelli, matrice e quotazioni…</div></div>
-  <div class="limitNote">Segnali indicativi, non ordini inviati. Prezzi basati sul feed del tuo cTrader, SL sulla struttura e TP su livelli verificati. Ricontrollare spread e notizie prima di operare.</div>
+  <div class="limitNote">M1/M5: filtro EMA9 M15 · M15/M30: livelli autonomi. Per inviare un LIMIT usa il pulsante, controlla i dati e conferma. Nessun invio automatico.</div>
 
   <button id="levelsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra livelli ▼</button>
   <div id="levelsDetails" class="hidden">
@@ -189,14 +223,27 @@
     <button id="moreBtn" class="btn">Mostra più livelli</button>
   </div>
   </div>
-  <div id="notice" class="notice">Il plugin usa solo dati del tuo cTrader. Nessun login esterno e nessun ordine automatico.</div>
+  <div id="notice" class="notice">Dati da cTrader. Operazioni solo manuali, dopo conferma. Prova prima su demo.</div>
   <div class="legend"><span class="pill">★★★ molto forte</span><span class="pill">★★ forte</span><span class="pill">★ utile</span></div>
+</div>
+
+<div class="overlay hidden" id="orderOverlay" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
+ <div class="dialog">
+  <h3 id="orderTitle">Conferma ordine LIMIT</h3>
+  <p>La conferma invia un ordine REALE sul conto cTrader attivo. Prima controlla il simbolo e il conto (demo/live).</p>
+  <div class="previewGrid" id="orderPreview"></div>
+  <div class="tradeForm"><label for="orderLots">Lotto</label><input id="orderLots" type="number" step="0.01" min="0.01" max="100" value="0.01" inputmode="decimal" /></div>
+  <p id="lotInfo">Volume, min/max e passo controllati con le specifiche del broker.</p>
+  <p>Il TP inserito è TP1. TP2 resta indicativo. L'ordine pendente scade automaticamente in base al timeframe.</p>
+  <div id="orderFeedback" role="status" aria-live="polite"></div>
+  <div class="dialogActions"><button id="orderCancel" type="button">Annulla / Chiudi</button><button id="orderConfirm" type="button">CONFERMA E INVIA</button></div>
+ </div>
 </div>
 
 <script type="module">
   import { createClientAdapter } from "https://esm.sh/@spotware-web-team/sdk-external-api";
   import {
-    getLightSymbolList, getSymbol, getTrendbarList,
+    getLightSymbolList, getSymbol, getTrendbarList, createNewOrder, executionEvent,
     handleConfirmEvent, quoteEvent, registerEvent, subscribeQuotes, ServerInterfaces
   } from "https://esm.sh/@spotware-web-team/sdk";
   import { take, catchError, firstValueFrom, timeout } from "https://esm.sh/rxjs";
@@ -214,6 +261,7 @@
     bid:null, ask:null, mid:null, digits:2, pipSize:0.01, pointSize:0.01, levels:[], keyLevels:[],
     lastQuoteAt:0, dataLoadedAt:0, loadingSeq:0, loading:false, loadErrors:[], pending:[],
     minM15Pts:50, maxM15Pts:300, minLimitScore:65, filterM15:true,
+    draft:null,orderBusy:false,submittedKeys:new Set(),orderStatus:'',
     barsByTf:{}, maxEachSide:2, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0, analysisPrice:null, lastM5SignalTime:null
   };
 
@@ -487,8 +535,8 @@
   function copyPriceText(v){ return Number.isFinite(v) ? v.toFixed(state.digits) : ''; }
 
   function nearestSupportResistance(){
-    const ref=state.analysisPrice||state.mid;
-    if(!ref || !state.levels.length) return {support:null,resistance:null};
+    const ref=(state.lastQuoteAt && Number.isFinite(state.mid))?state.mid:(state.analysisPrice||state.mid);
+    if(!Number.isFinite(ref) || !state.levels.length) return {support:null,resistance:null};
     const valid=state.levels.filter(x=>Number.isFinite(x.price));
     // Il piano operativo deve riferirsi al primo ostacolo reale vicino al prezzo,
     // non saltarlo solo perché ha un punteggio inferiore a un livello lontano.
@@ -498,6 +546,26 @@
     const support=pool.filter(x=>x.price<ref).sort((a,b)=>b.price-a.price)[0]||null;
     const resistance=pool.filter(x=>x.price>ref).sort((a,b)=>a.price-b.price)[0]||null;
     return {support,resistance};
+  }
+
+  // Il prezzo live puo' attraversare un livello prima della chiusura M5:
+  // e' un attraversamento provvisorio, NON un breakout confermato.
+  function liveLevelEvent(){
+    if(!state.lastQuoteAt || Date.now()-state.lastQuoteAt>180000 || !Number.isFinite(state.mid)) return null;
+    const last=closedBars('M5').at(-1);
+    if(!last) return null;
+    const ref=last.c, live=state.mid;
+    const spread=(Number.isFinite(state.ask)&&Number.isFinite(state.bid))?Math.max(0,state.ask-state.bid):0;
+    const atr5=atr(closedBars('M5'),14)||state.pointSize*20;
+    const buffer=Math.max(state.pointSize*2,spread*.2,atr5*.01);
+    const levels=state.levels.filter(l=>l.score>=3.2 && Number.isFinite(l.price));
+    const crossed=levels.filter(l=>
+      live>l.price+buffer && ref<=l.price+buffer ||
+      live<l.price-buffer && ref>=l.price-buffer
+    ).sort((a,b)=>Math.abs(a.price-live)-Math.abs(b.price-live));
+    const chosen=crossed[0];
+    if(!chosen) return null;
+    return {level:chosen,side:live>chosen.price?'UP':'DOWN'};
   }
 
   function rrToTp1(s){
@@ -518,26 +586,36 @@
     const s=state.signal;
     $('m5Countdown').textContent=m5CountdownText();
     const {support,resistance}=nearestSupportResistance();
-    const bearish=(s?.context||'').includes('RIBASSISTA');
-    const bullish=(s?.context||'').includes('RIALZISTA');
+    const cross=liveLevelEvent();
+    const m15=trendContext('M15'), h1=trendContext('H1');
+    const bias15=contextDirection(m15), biasH1=contextDirection(h1);
     const set=(id,text,cls='neutral')=>{ const el=$(id); el.textContent=text||''; el.className=`planrow ${cls}`; };
+    // Attenzione: la conferma della candela chiusa prevale sulla sola lettura della quotazione.
+    if(cross){
+      const side=cross.side==='UP'?'BUY':'SELL';
+      const verb=cross.side==='UP'?'sopra':'sotto';
+      set('planPrimary',`PREZZO LIVE ${verb} ${fmt(cross.level.price)} · attraversamento NON confermato`,cross.side==='UP'?'buy':'sell');
+      set('planSecondary',`${side}: aspetta chiusura M5 e retest; nessun ingresso anticipato.`,'neutral');
+      set('planRisk','Un livello attraversato live non equivale a breakout confermato.','neutral');
+      return;
+    }
     if(s && (s.side==='BUY'||s.side==='SELL') && s.score>=75){
       set('planPrimary',`${s.side}: ${s.name} ${Number.isFinite(s.entry)?fmt(s.entry):''}`,s.side==='BUY'?'buy':'sell');
       set('planSecondary',`SL ${Number.isFinite(s.invalid)?fmt(s.invalid):'—'} · TP1 ${Number.isFinite(s.tp1)?fmt(s.tp1):'—'}`,'neutral');
-      set('planRisk','Segnale valido fino alla prossima chiusura M5.','neutral');
+      set('planRisk','Segnale da candela M5 chiusa. Verificare prezzo corrente prima di operare.','neutral');
       return;
     }
-    if(bearish){
-      set('planPrimary',support?`SELL solo sotto ${fmt(support.price)} + retest`:'SELL: attendi supporto','sell');
-      set('planSecondary',resistance?`Oppure rifiuto M5 di ${fmt(resistance.price)}`:'','sell');
-    } else if(bullish){
-      set('planPrimary',resistance?`BUY solo sopra ${fmt(resistance.price)} + retest`:'BUY: attendi resistenza','buy');
-      set('planSecondary',support?`Oppure rifiuto M5 di ${fmt(support.price)}`:'','buy');
+    if(bias15===1 && biasH1>=0){
+      set('planPrimary',resistance?`BUY solo dopo chiusura M5 sopra ${fmt(resistance.price)} + retest`:'BUY: attesa di resistenza verificabile','buy');
+      set('planSecondary',support?`Oppure rifiuto M5 sul supporto ${fmt(support.price)}`:'','buy');
+    } else if(bias15===-1 && biasH1<=0){
+      set('planPrimary',support?`SELL solo dopo chiusura M5 sotto ${fmt(support.price)} + retest`:'SELL: attesa di supporto verificabile','sell');
+      set('planSecondary',resistance?`Oppure rifiuto M5 sulla resistenza ${fmt(resistance.price)}`:'','sell');
     } else {
-      set('planPrimary','WAIT: nessun vantaggio chiaro.','neutral');
-      set('planSecondary',support&&resistance?`Range ${fmt(support.price)} / ${fmt(resistance.price)}`:'','neutral');
+      set('planPrimary','WAIT: M15/H1 discordi o senza direzione chiara.','neutral');
+      set('planSecondary',support&&resistance?`Prezzo live tra ${fmt(support.price)} e ${fmt(resistance.price)}.`:'Attendere conferma su un livello.','neutral');
     }
-    set('planRisk','Analisi bloccata fino alla prossima chiusura M5.','neutral');
+    set('planRisk','Segnale M5 a candela chiusa; quote, livelli e LIMIT aggiornati live.','neutral');
   }
 
   function getTargets(side, entry, excludePrice=null){
@@ -627,8 +705,10 @@
     const best=candidates[0];
     const ctx=`${m15.dir} / ${h1.dir}`;
     if(best){
-      if(best.score>=75 && Number.isFinite(best.rr) && best.rr<1.15){
-        state.signal={side:'WAIT',score:best.score,name:`SETUP ${best.side} · SPAZIO`,zone:zoneText,context:ctx,entry:best.entry,invalid:best.invalid,tp1:best.tp1,tp2:best.tp2,breakdown:best.breakdown,reason:`Setup tecnicamente valido, ma TP1 offre solo ${best.rr.toFixed(2)}R: spazio insufficiente, attendo un ingresso migliore.`};
+      const validTarget=Number.isFinite(best.tp1) && Number.isFinite(best.rr) && best.rr>=1.15 &&
+        (best.side==='BUY'?best.tp1>best.entry && best.invalid<best.entry:best.tp1<best.entry && best.invalid>best.entry);
+      if(best.score>=75 && !validTarget){
+        state.signal={side:'WAIT',score:best.score,name:`SETUP ${best.side} · SPAZIO`,zone:zoneText,context:ctx,entry:best.entry,invalid:best.invalid,tp1:best.tp1,tp2:best.tp2,breakdown:best.breakdown,reason:`Nessun target TP1 verificato oppure spazio insufficiente (${Number.isFinite(best.rr)?best.rr.toFixed(2)+'R':'N/D'}). Attendo un ingresso migliore.`};
         return;
       }
       if(best.score>=75){
@@ -696,7 +776,9 @@
     const cls=s.side==='BUY'?'buy':s.side==='SELL'?'sell':'wait';
     const bias=biasFromSignal(s);
     $('signalBias').textContent=bias.text; $('signalBias').className=bias.cls;
-    $('signalWhy').textContent=shortWhy(s);
+    const crossing=liveLevelEvent();
+    $('signalWhy').textContent=crossing?
+      `${crossing.side==='UP'?'Superata live':'Persa live'} quota ${fmt(crossing.level.price)}: attesa conferma M5.`:shortWhy(s);
     $('scoreWhy').innerHTML=`<b>MOTIVO PUNTEGGIO</b><br>${escapeHtml(breakdownText(s))}`;
     $('signalName').textContent=s.name||s.side;
     $('signalName').className=`signalname ${cls}`;
@@ -733,7 +815,7 @@
     renderMatrixAndLimits();
     if(!state.mid || !state.levels.length) return;
 
-    const ref=state.analysisPrice||state.mid;
+    const ref=(state.lastQuoteAt && Number.isFinite(state.mid))?state.mid:(state.analysisPrice||state.mid);
     const resist=state.levels.filter(x=>x.price>ref).sort((a,b)=>a.price-b.price).slice(0,state.maxEachSide);
     const support=state.levels.filter(x=>x.price<ref).sort((a,b)=>b.price-a.price).slice(0,state.maxEachSide);
     $('resistanceList').innerHTML=resist.length?resist.map(x=>renderLevel(x,'R')).join(''):'<div class="level">Nessuna resistenza significativa vicina.</div>';
@@ -807,7 +889,7 @@
       if(!Number.isFinite(newSymbolId)) throw new Error(`ID simbolo non valido per ${getField(hit,['name'])||name}: ${String(getField(hit,['id','symbolId']))}`);
       const symbolChanged=state.symbolId!==newSymbolId;
       state.symbolName=getField(hit,['name'])||name; state.symbolId=newSymbolId;
-      if(symbolChanged){state.bid=null;state.ask=null;state.mid=null;state.levels=[];state.keyLevels=[];state.signal=null;state.pending=[];state.barsByTf={};state.lastQuoteAt=0;state.dataLoadedAt=0;state.analysisPrice=null;render();}
+      if(symbolChanged){closeOrderDialog();state.bid=null;state.ask=null;state.mid=null;state.levels=[];state.keyLevels=[];state.signal=null;state.pending=[];state.barsByTf={};state.lastQuoteAt=0;state.dataLoadedAt=0;state.analysisPrice=null;render();}
       const detail=await firstValueFrom(getSymbol(state.adapter,{symbolId:[state.symbolId]}).pipe(take(1),timeout({first:10000})));
       if(seq!==state.loadingSeq) return;
       state.symbolInfo=repeatedField(detail,['symbol','symbols'])[0]||{};
@@ -847,13 +929,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v3.0 · Dati esclusivamente da cTrader. Segnali LIMIT indicativi; nessun ordine inviato.`;
+      $('notice').textContent=`v3.1 · Dati esclusivamente da cTrader. Segnali LIMIT indicativi; nessun ordine inviato.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v3.0 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v3.1 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -891,103 +973,150 @@
     const diff=(current-ctx.ema9)/state.pointSize;
     return {signed:diff,abs:Math.abs(diff),ctx,bar:last,live};
   }
+  function priceRound(x){
+    // Tick size del broker quando disponibile, altrimenti passo prezzi visualizzato.
+    const step=Number.isFinite(state.pointSize)&&state.pointSize>0?state.pointSize:Math.pow(10,-state.digits);
+    return Number((Math.round(x/step)*step).toFixed(state.digits));
+  }
   function limitTargets(side,entry,stop,scale){
     const risk=Math.abs(entry-stop);
-    const spread=state.ask-state.bid;
-    const minDist=Math.max(spread*2,state.pointSize*5);
-    const levels=state.levels.filter(l=>Number.isFinite(l.price)&&l.score>=3);
-    const pool=levels.filter(l=>side==='BUY'?l.price>entry+minDist:l.price<entry-minDist)
+    const spread=Math.max(0,state.ask-state.bid);
+    const atrTf=atr(closedBars(scale),14)||spread*10;
+    const minDist=Math.max(spread*1.2,state.pointSize*3);
+    // Non saltare il primo ostacolo, anche se e' meno importante del successivo.
+    const pool=state.levels.filter(l=>Number.isFinite(l.price)&&l.score>=2.4 &&
+      (side==='BUY'?l.price>entry+minDist:l.price<entry-minDist))
       .sort((a,b)=>Math.abs(a.price-entry)-Math.abs(b.price-entry));
-    // Il primo livello contrario e' il TP1: non scavalcare ostacoli vicini
-    // per fabbricare un R:R favorevole.
-    const tp1=Number.isFinite(pool[0]?.price)?Number(pool[0].price.toFixed(state.digits)):null;
-    if(!Number.isFinite(tp1)) return null;
-    const rr=Math.abs(tp1-entry)/risk;
+    if(!pool.length||risk<=0) return null;
+    const buffer=Math.max(state.pointSize*2,spread*.25,atrTf*.015);
+    const tp1=priceRound(pool[0].price+(side==='BUY'?-buffer:buffer));
+    const reward=side==='BUY'?tp1-entry:entry-tp1;
+    if(reward<=Math.max(spread*2,state.pointSize*5)) return null;
+    const rr=reward/risk;
     if(rr<1.35 || rr>8) return null;
-    const raw2=pool.find(l=>Math.abs(l.price-entry)>Math.abs(tp1-entry)+minDist)?.price ?? null;
-    const tp2=Number.isFinite(raw2)?Number(raw2.toFixed(state.digits)):null;
-    return {tp1,tp2,rr};
+    const another=pool.find(l=>Math.abs(l.price-entry)>Math.abs(pool[0].price-entry)+minDist);
+    const raw2=another?priceRound(another.price+(side==='BUY'?-buffer:buffer)):null;
+    const tp2=Number.isFinite(raw2) &&
+      (side==='BUY'?raw2>tp1:raw2<tp1)?raw2:null;
+    return {tp1,tp2,rr,obstacle:pool[0]};
+  }
+  function candleReject(b,level,side,a){
+    if(!b || !Number.isFinite(level)||!a) return false;
+    const range=Math.max(state.pointSize,b.h-b.l),body=Math.abs(b.c-b.o);
+    const lower=Math.min(b.o,b.c)-b.l,upper=b.h-Math.max(b.o,b.c);
+    const tol=Math.max(a*.14,state.pointSize*4);
+    return side==='BUY'?
+      b.l<=level+tol && b.c>level && lower>=Math.max(body*.85,range*.24) && b.c>b.l+range*.45:
+      b.h>=level-tol && b.c<level && upper>=Math.max(body*.85,range*.24) && b.c<b.h-range*.45;
   }
   function computeLimitSignals(){
     state.pending=[];
-    if(!state.bid||!state.ask||!state.levels.length || !state.lastQuoteAt) return;
-    if(Date.now()-state.lastQuoteAt>180000) return;
+    if(!Number.isFinite(state.bid)||!Number.isFinite(state.ask)||state.ask<=state.bid ||
+       !state.levels.length || !state.lastQuoteAt || Date.now()-state.lastQuoteAt>180000) return;
     const m15=distanceM15();
-    if(!m15 || (state.filterM15 && (m15.abs<state.minM15Pts || m15.abs>state.maxM15Pts))) return;
-    const a5=atr(closedBars('M5'),14);
-    const spread=state.ask-state.bid;
+    const a5=atr(closedBars('M5'),14),spread=state.ask-state.bid;
     if(!Number.isFinite(a5)||a5<=0||spread<=0||spread>a5*.18) return;
     const m5bars=closedBars('M5');
-    if(m5bars.length<25) return;
+    if(m5bars.length<35) return;
     const last5=m5bars.at(-1);
-    if(last5.h-last5.l>2.5*a5) return; // anti-spike
-    const contexts=Object.fromEntries(TF.map(t=>[t.label,trendContext(t.label)]));
-    const b5=contextDirection(contexts.M5), b15=contextDirection(contexts.M15), b30=contextDirection(contexts.M30), b1=contextDirection(contexts.H1);
+    if(last5.h-last5.l>2.5*a5) return;
+    const ctx=Object.fromEntries(TF.map(t=>[t.label,trendContext(t.label)]));
+    const dirs=Object.fromEntries(TF.map(t=>[t.label,contextDirection(ctx[t.label])]));
     const ref=(state.bid+state.ask)/2;
     const candidates=[];
-    // Possono esserci setup indipendenti su diversi TF, ma H1 è contesto e non motore di scalping.
+    const minSep=Math.max(spread*1.5,state.pointSize*4);
+    const isLiveLimit=(side,price)=>side==='BUY'?price<state.ask-minSep:price>state.bid+minSep;
+
+    // Ogni TF genera idee usando la propria struttura. Gli altri TF sono punteggio,
+    // non un veto assoluto; una inversione controtrend richiede un rejection reale.
     for(const label of ['M1','M5','M15','M30']){
-      const bars=closedBars(label); const c=contexts[label];
-      if(!bars||bars.length<35||!Number.isFinite(c.ema9)||!Number.isFinite(c.ema21)) continue;
-      const a=atr(bars,14); if(!a||!Number.isFinite(a)) continue;
-      const last=bars.at(-1);
-      if(last.h-last.l>2.8*a) continue;
-      const pivotSpan=label==='M1'?16:label==='M5'?12:label==='M15'?8:6;
-      const seg=bars.slice(-pivotSpan), low=Math.min(...seg.map(b=>b.l)), high=Math.max(...seg.map(b=>b.h));
-      const localPad=Math.max(a*.18,spread*2.5,state.pointSize*8);
-      const reach=Math.max(a*1.8,spread*7);
+      const bars=closedBars(label), c=ctx[label], ownDir=dirs[label];
+      if(bars.length<40 || !Number.isFinite(c.ema9)||!Number.isFinite(c.ema21)) continue;
+      const a=atr(bars,14),last=bars.at(-1),prev=bars.at(-2);
+      if(!Number.isFinite(a)||a<=0||last.h-last.l>2.8*a) continue;
+      const scalp=(label==='M1'||label==='M5');
+      if(scalp && state.filterM15 && (!m15 || m15.abs<state.minM15Pts || m15.abs>state.maxM15Pts)) continue;
+      const lastN=label==='M1'?20:label==='M5'?16:label==='M15'?12:10;
+      const seg=bars.slice(-lastN);
+      const low=Math.min(...seg.map(b=>b.l)), high=Math.max(...seg.map(b=>b.h));
+      const pad=Math.max(a*.15,spread*2,state.pointSize*5);
+      const reach=Math.max(a*2.1,spread*8);
+      if(!Number.isFinite(low)||!Number.isFinite(high)) continue;
       for(const side of ['BUY','SELL']){
         const dir=side==='BUY'?1:-1;
-        const agreeing=[b5,b15,b30].filter(v=>v===dir).length;
-        // Allineamento M5/M15 e M30, H1 non deve opporsi nettamente.
-        if(agreeing<2 || (b15!==dir) || b1===-dir) continue;
-        if(label!=='M1' && contextDirection(c)!==dir) continue;
-        if(label==='M1' && contextDirection(c)===-dir) continue;
-        const p9=c.ema9,p21=c.ema21;
-        // Livello pivot valido, preferendo ritracciamento EMA9 supportato da supporto/resistenza.
-        const levels=state.levels.filter(l=>Number.isFinite(l.price) && l.score>=3.2 &&
-          (side==='BUY'?l.price<state.ask:l.price>state.bid) && Math.abs(l.price-ref)<reach*2.5)
-          .sort((a,b)=>Math.abs(a.price-p9)-Math.abs(b.price-p9));
-        let entry=null, level=null, basis='';
-        for(const l of levels.slice(0,8)){
-          // Non usare una resistenza isolata come acquisto, né un supporto isolato come vendita.
-          if(Math.abs(l.price-p9)>a*.85) continue;
-          const proposed=l.price;
-          if(side==='BUY' && proposed>=state.ask-Math.max(spread*1.5,state.pointSize*4)) continue;
-          if(side==='SELL' && proposed<=state.bid+Math.max(spread*1.5,state.pointSize*4)) continue;
-          if(Math.abs(proposed-ref)>reach) continue;
-          entry=proposed;level=l;basis='Livello + EMA9';break;
+        const localTrend=ownDir===dir;
+        const align=Object.entries(dirs).filter(([tf,v])=>tf!==label && v===dir).length;
+        const opposed=Object.entries(dirs).filter(([tf,v])=>tf!==label && v===-dir).length;
+        // Requisito comune: il prezzo deve essere distante il giusto dall'entry.
+        const supports=state.levels.filter(l=>l.score>=3.2 && Number.isFinite(l.price) &&
+          isLiveLimit(side,l.price) && Math.abs(l.price-ref)<=reach*1.4)
+          .sort((a,b)=>Math.abs(a.price-c.ema9)-Math.abs(b.price-c.ema9));
+        const setups=[];
+        const p9=c.ema9;
+        const closeOk=side==='BUY'?last.c>p9 && c.ema9>c.ema21:last.c<p9 && c.ema9<c.ema21;
+
+        // A. Pullback sul TF di origine: EMA9/21 e direzione chiara.
+        if(localTrend && closeOk && isLiveLimit(side,p9) && Math.abs(ref-p9)<=reach &&
+           (side==='BUY'?p9>=low-a*.20:p9<=high+a*.20)){
+          const near=supports.find(l=>Math.abs(l.price-p9)<=a*.65);
+          const entry=near?priceRound(near.price):priceRound(p9);
+          if(isLiveLimit(side,entry)) setups.push({entry,level:near||null,kind:near?'SUP/RES + EMA9':'PULLBACK EMA9',quality:near?14:8});
         }
-        if(entry===null){
-          const proposed=p9;
-          if(side==='BUY' && proposed<state.ask-Math.max(spread*1.5,state.pointSize*4) && proposed>ref-reach){entry=proposed;basis='Pullback EMA9';}
-          if(side==='SELL'&& proposed>state.bid+Math.max(spread*1.5,state.pointSize*4) && proposed<ref+reach){entry=proposed;basis='Pullback EMA9';}
+
+        // B. Rejection provato da candela chiusa vicino a livello tecnico.
+        // In controtrend non basta 'prezzo vicino a EMA': serve rifiuto strutturale.
+        for(const l of supports.slice(0,8)){
+          if(candleReject(last,l.price,side,a) || candleReject(prev,l.price,side,a)){
+            setups.push({entry:priceRound(l.price),level:l,kind:'REJECTION S/R',quality:18});
+          }
         }
-        if(entry===null) continue;
-        entry=Number(entry.toFixed(state.digits));
-        if(!(side==='BUY'?entry<state.ask:entry>state.bid)) continue;
-        // Valida posizione entro la struttura recente, no stop 'fisso in euro'.
-        if(side==='BUY' && entry<low-a*.35) continue;
-        if(side==='SELL'&& entry>high+a*.35) continue;
-        const stop=Number((side==='BUY'? Math.min(low,entry-a*.65)-localPad : Math.max(high,entry+a*.65)+localPad).toFixed(state.digits));
-        const risk=Math.abs(entry-stop);
-        if(risk<spread*3 || risk>a*3.2) continue;
-        const target=limitTargets(side,entry,stop,label);
-        if(!target) continue;
-        const raw=Math.round(34+agreeing*10+(b1===dir?7:0)+(level?10:0)+(Math.abs(entry-p9)<=a*.3?8:3)+Math.min(8,Math.max(0,(target.rr-1.35)*5)));
-        const score=Math.min(95,raw);
-        if(score<state.minLimitScore) continue;
-        if(side==='BUY' && !(entry<state.ask && stop<entry && target.tp1>entry)) continue;
-        if(side==='SELL' && !(entry>state.bid && stop>entry && target.tp1<entry)) continue;
-        candidates.push({side,tf:label,entry,sl:stop,tp1:target.tp1,tp2:target.tp2,rr:target.rr,score,basis,
-          reason:`${basis} ${label}; M5/M15/M30 ${agreeing}/3 concordi, SL oltre struttura ${label}, TP su livello tecnico.`});
+
+        // C. Breakout + retest: breakout gia' chiuso sul TF, proposta LIMIT sulla zona.
+        const b0=bars.at(-4),b1=bars.at(-3),b2=bars.at(-2),b3=bars.at(-1);
+        for(const l of supports.slice(0,8)){
+          const buf=Math.max(a*.08,spread,state.pointSize*3);
+          const broken=side==='BUY'?
+            b1.c<=l.price && b2.c>l.price+buf && b3.c>l.price:
+            b1.c>=l.price && b2.c<l.price-buf && b3.c<l.price;
+          const retested=side==='BUY'?
+            b3.l<=l.price+a*.25 && b3.c>l.price+buf*.2:
+            b3.h>=l.price-a*.25 && b3.c<l.price-buf*.2;
+          if(b0 && broken && retested) setups.push({entry:priceRound(l.price),level:l,kind:'BREAKOUT + RETEST',quality:17});
+        }
+
+        for(const proposal of setups){
+          const entry=proposal.entry;
+          if(!isLiveLimit(side,entry) || Math.abs(ref-entry)>reach || entry<=0) continue;
+          if(side==='BUY' && entry<low-a*.38) continue;
+          if(side==='SELL'&& entry>high+a*.38) continue;
+          const sl=priceRound(side==='BUY'?Math.min(low,entry-a*.6)-pad:Math.max(high,entry+a*.6)+pad);
+          const risk=side==='BUY'?entry-sl:sl-entry;
+          if(risk<spread*3 || risk>a*3.5 || risk<=0) continue;
+          const targets=limitTargets(side,entry,sl,label);
+          if(!targets) continue;
+          const localBonus=localTrend?21:ownDir===0?9:0;
+          // Una rejection controtrend e' ammessa solo con conferma forte e stop non lontano.
+          if(!localTrend && proposal.kind!=='REJECTION S/R') continue;
+          if(ownDir===-dir && (proposal.level?.score||0)<6.3) continue;
+          const h1Conflict=dirs.H1===-dir;
+          if(scalp && h1Conflict && opposed>=3) continue;
+          const points=29+localBonus+proposal.quality+
+            (proposal.level?Math.min(14,Math.round(proposal.level.score*1.7)):0)+
+            Math.min(12,align*4)-Math.min(18,opposed*5)+
+            Math.min(7,Math.floor((targets.rr-1.35)*3));
+          const score=Math.max(0,Math.min(96,Math.round(points)));
+          const minScore=proposal.kind==='REJECTION S/R'&&!localTrend?Math.max(76,state.minLimitScore):state.minLimitScore;
+          if(score<minScore) continue;
+          const reason=`${proposal.kind} ${label}; ${localTrend?'trend locale concorde':'rifiuto strutturale confermato'}; ${align} TF concordi, ${opposed} contrari; TP1 prima di ${fmt(targets.obstacle.price)}.`;
+          candidates.push({side,tf:label,entry,sl,tp1:targets.tp1,tp2:targets.tp2,rr:targets.rr,score,basis:proposal.kind,reason});
+        }
       }
     }
-    // Evita mostrare 4 segnali uguali a pochi punti tra loro.
     candidates.sort((a,b)=>b.score-a.score || (b.rr-a.rr));
     for(const c of candidates){
-      if(state.pending.length>=3) break;
-      if(state.pending.some(x=>x.side===c.side && Math.abs(x.entry-c.entry)<Math.max(a5*.35,spread*4))) continue;
+      if(state.pending.length>=4) break;
+      if(state.pending.some(x=>x.side===c.side &&
+         Math.abs(x.entry-c.entry)<Math.max(a5*.2,spread*3))) continue;
       state.pending.push(c);
     }
   }
@@ -1005,15 +1134,116 @@
       const ok=abs>=state.minM15Pts && abs<=state.maxM15Pts;
       $('emaDistance').textContent=`${d.signed>=0?'+':'−'}${abs} punti ${d.signed>=0?'↑':'↓'}`;
       $('emaDistance').style.color=ok?'var(--green)':'var(--amber)';
-      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+(state.filterM15 ? (ok?'dentro range':'fuori range · LIMIT sospesi'):'filtro spento');
+      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+(state.filterM15 ? (ok?'dentro range':'fuori range · M1/M5 sospesi'):'filtro M1/M5 spento');
     }
     if(!state.lastQuoteAt){$('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Quote bid/ask assenti: non genero prezzi LIMIT.</div>';return;}
     if(Date.now()-state.lastQuoteAt>180000){$('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Ultima quotazione troppo vecchia: attendere quote aggiornate.</div>';return;}
-    $('limitsCount').textContent=`${state.pending.length} setup`;
-    $('limitCards').innerHTML=state.pending.length?state.pending.map(p=>{
+    $('limitsCount').textContent=`${state.pending.length} setup · M1/M5/M15/M30`;
+    $('limitCards').innerHTML=state.pending.length?state.pending.map((p,ix)=>{
       const side=p.side.toLowerCase();
-      return `<div class="limitCard ${side}"><div class="limitHead"><b>${p.side} LIMIT · ${p.tf}</b><em>Confluenza ${p.score}/100 · RR ${p.rr.toFixed(2)}</em></div><div class="limitNumbers"><div><small>ENTRY</small><strong>${fmt(p.entry)}</strong></div><div><small>SL</small><strong>${fmt(p.sl)}</strong></div><div><small>TP1</small><strong>${fmt(p.tp1)}</strong></div><div><small>TP2</small><strong>${Number.isFinite(p.tp2)?fmt(p.tp2):'—'}</strong></div></div><div class="limitReason">${escapeHtml(p.reason)}</div></div>`;
-    }).join(''):'<div class="placeholder">WAIT: non ci sono LIMIT con trend, struttura e spazio TP sufficienti.</div>';
+      return `<div class="limitCard ${side}"><div class="limitHead"><b>${p.side} LIMIT · ${p.tf}</b><em>Confluenza ${p.score}/100 · RR ${p.rr.toFixed(2)}</em></div><div class="limitNumbers"><div><small>ENTRY</small><strong>${fmt(p.entry)}</strong></div><div><small>SL</small><strong>${fmt(p.sl)}</strong></div><div><small>TP1</small><strong>${fmt(p.tp1)}</strong></div><div><small>TP2</small><strong>${Number.isFinite(p.tp2)?fmt(p.tp2):'—'}</strong></div></div><div class="limitReason">${escapeHtml(p.reason)}</div><div class="limitAction"><button type="button" class="actbtn" data-order-index="${ix}" ${!state.connected || state.orderBusy ? 'disabled' : ''}>PREPARA ${p.side} LIMIT</button><small>Invio solo dopo conferma</small></div></div>`;
+    }).join(''):'<div class="placeholder">WAIT: nessun LIMIT valido per struttura, conferme e spazio TP1.</div>';
+  }
+
+  // Trading SDK - mai inviare richieste senza una conferma umana.
+  const EXPIRY_MINUTES={M1:30,M5:90,M15:180,M30:240};
+  const orderFingerprint=p=>[state.symbolId,p.side,p.tf,p.entry,p.sl,p.tp1].join('|');
+  function orderReady(p){
+    if(!state.connected || state.orderBusy || !state.adapter || !Number.isFinite(state.symbolId)) return 'cTrader non pronto';
+    if(!p || !state.pending.some(x=>orderFingerprint(x)===orderFingerprint(p))) return 'Setup non piu\u0300 disponibile: aggiorna';
+    if(Date.now()-state.lastQuoteAt>10000 || !(state.bid>0&&state.ask>state.bid)) return 'Quote non aggiornate';
+    const minGap=Math.max(state.pointSize*4,(state.ask-state.bid)*1.5);
+    if(p.side==='BUY' && !(p.entry<state.ask-minGap && p.sl<p.entry && p.tp1>p.entry)) return 'Prezzi BUY LIMIT non validi';
+    if(p.side==='SELL' && !(p.entry>state.bid+minGap && p.sl>p.entry && p.tp1<p.entry)) return 'Prezzi SELL LIMIT non validi';
+    if(!Number.isFinite(p.rr)||p.rr<1.35 || p.score<state.minLimitScore) return 'RR/punteggio insufficienti';
+    if(getField(state.symbolInfo,['enabled'])===false) return 'Simbolo non abilitato al trading';
+    if(state.submittedKeys.has(orderFingerprint(p))) return 'Setup gia\u0300 inviato: controlla Ordini prima di riprovare';
+    return '';
+  }
+  function brokerVolume(lots){
+    const lotSize=numValue(getField(state.symbolInfo,['lotSize']));
+    const min=numValue(getField(state.symbolInfo,['minVolume']));
+    const max=numValue(getField(state.symbolInfo,['maxVolume']));
+    const step=numValue(getField(state.symbolInfo,['stepVolume']));
+    if(!Number.isFinite(lots)||lots<=0||!Number.isFinite(lotSize)||lotSize<=0 ||
+       !Number.isFinite(min)||min<=0 || !Number.isFinite(step)||step<=0)
+      throw Error('Mancano lotSize/minVolume/stepVolume dal broker. Blocco l\'invio per sicurezza.');
+    const v=Math.round(lots*lotSize); // lotSize e volumi SDK sono entrambi in centesimi
+    if(v<min || (Number.isFinite(max)&&max>0&&v>max))
+      throw Error(`Volume non consentito. Min ${Math.round(min/lotSize*1000)/1000}, max ${Math.round(max/lotSize*1000)/1000} lotti.`);
+    if(Math.abs((v-min)/step - Math.round((v-min)/step))>1e-6)
+      throw Error('Lotto non multiplo del passo broker. Cambia il valore.');
+    return v;
+  }
+  function showOrderFeedback(msg,bad=false){$('orderFeedback').textContent=msg;$('orderFeedback').style.color=bad?'var(--red)':'var(--amber)';}
+  function closeOrderDialog(){
+    if(state.orderBusy) return;
+    $('orderOverlay').classList.add('hidden');state.draft=null;
+    $('orderFeedback').textContent='';
+  }
+  function openOrderDialog(index){
+    const p=state.pending[index];if(!p)return;
+    const reason=orderReady(p);
+    if(reason){$('notice').textContent='Ordine non disponibile: '+reason;return;}
+    state.draft={...p,symbolId:state.symbolId,symbolName:state.symbolName,key:orderFingerprint(p),opened:Date.now()};
+    const minutes=EXPIRY_MINUTES[p.tf]||90;
+    $('orderTitle').textContent=`${p.side} LIMIT · ${p.tf} · ${state.symbolName}`;
+    $('orderPreview').innerHTML=`<div><b>ENTRATA</b>${fmt(p.entry)}</div><div><b>STOP LOSS</b>${fmt(p.sl)}</div><div><b>TAKE PROFIT (TP1)</b>${fmt(p.tp1)}</div><div><b>R:R / PUNTEGGIO</b>${p.rr.toFixed(2)}R · ${p.score}/100</div><div><b>SCADENZA</b>${minutes} minuti</div><div><b>PREZZO ATTUALE</b>${fmt(state.mid)}</div>`;
+    const lotSize=numValue(getField(state.symbolInfo,['lotSize']));
+    const min=numValue(getField(state.symbolInfo,['minVolume']));
+    const step=numValue(getField(state.symbolInfo,['stepVolume']));
+    if(lotSize>0&&min>0){
+      const minLots=min/lotSize;
+      $('orderLots').value=(Math.max(.01,minLots)).toFixed(Math.max(2,state.digits===5?3:2));
+      $('lotInfo').textContent=`Min ${minLots.toFixed(3)} lotti · passo ${step>0?(step/lotSize).toFixed(3):'N/D'} · lotto sempre modificabile.`;
+    }else{
+      $('orderLots').value='0.01';
+      $('lotInfo').textContent='Specifiche volume broker assenti: nessun invio finche\u0301 non disponibili.';
+    }
+    $('orderConfirm').disabled=false;
+    $('orderCancel').disabled=false;
+    showOrderFeedback('Controlla conto demo/live, lotto, entry, SL e TP prima di inviare.');
+    $('orderOverlay').classList.remove('hidden');
+  }
+  async function submitOrder(){
+    const d=state.draft;if(!d||state.orderBusy) return;
+    try{
+      if(d.symbolId!==state.symbolId || Date.now()-d.opened>60000) throw Error('Finestra scaduta o simbolo cambiato. Riaprila.');
+      // Ricalcolo condizioni e rifiuto anche microspostamenti del segnale.
+      computeLimitSignals();
+      const latest=state.pending.find(p=>orderFingerprint(p)===d.key);
+      const reason=orderReady(latest);
+      if(reason) throw Error(reason);
+      const lots=Number(String($('orderLots').value).replace(',','.'));
+      const volume=brokerVolume(lots);
+      if(!Number.isSafeInteger(volume)||volume<=0) throw Error('Volume numerico non valido.');
+      const orderType=ServerInterfaces?.ProtoOrderType?.LIMIT;
+      const tradeSide=ServerInterfaces?.ProtoTradeSide?.[d.side];
+      if(orderType===undefined||tradeSide===undefined) throw Error('Enum ordini SDK non disponibile.');
+      state.orderBusy=true;
+      $('orderConfirm').disabled=true;$('orderCancel').disabled=true;
+      showOrderFeedback('Invio richiesta al broker… NON premere di nuovo.');
+      const expiry=Date.now()+(EXPIRY_MINUTES[d.tf]||90)*60000;
+      const req={symbolId:d.symbolId,orderType,tradeSide,volume,limitPrice:d.entry,
+        stopLoss:d.sl,takeProfit:d.tp1,expirationTimestamp:expiry,
+        label:'LMLEVELS',comment:`LM Levels ${d.tf} score ${d.score}`};
+      // Blocca duplicati anche in caso di timeout: una risposta tardiva puo\u0300 comunque creare un ordine.
+      state.submittedKeys.add(d.key);
+      const result=await firstValueFrom(createNewOrder(state.adapter,req).pipe(take(1),timeout({first:14000})));
+      const error=getField(result,['errorCode','error','description']);
+      if(error) throw Error(String(error));
+      const id=getField(getField(result,['order'])||{},['orderId']);
+      showOrderFeedback(`Richiesta ricevuta da cTrader${id?' · ordine #'+id:''}. Verifica nella scheda ORDINI che sia ACCETTATO e che SL/TP siano presenti.`,false);
+      state.orderStatus='Richiesta inviata · controlla Ordini';
+    }catch(e){
+      // Sui timeout e sugli errori di rete non ritentare: l'ordine potrebbe essere gia\u0300 stato accettato.
+      showOrderFeedback(`Invio non confermato: ${e?.message||e}. Controlla ORDINI su cTrader prima di riprovare.`,true);
+    }finally{
+      state.orderBusy=false;
+      $('orderCancel').disabled=false;
+      $('orderConfirm').disabled=true;
+      renderMatrixAndLimits();
+    }
   }
 
   async function connect(){
@@ -1024,6 +1254,14 @@
       await firstValueFrom(registerEvent(state.adapter).pipe(take(1),catchError(err=>{throw err})));
       handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
       state.connected=true; setStatus('Host connesso · dati da caricare',''); showDiag('');
+      executionEvent(state.adapter).subscribe(ev=>{
+        const label=String(getField(getField(ev,['order'])||{},['tradeData'])?.label||'');
+        if(label!=='LMLEVELS')return;
+        const code=getField(ev,['errorCode']);
+        const type=getField(ev,['executionType']);
+        if(code){state.orderStatus='ORDINE RIFIUTATO: '+code;showOrderFeedback(state.orderStatus,true);}
+        else {state.orderStatus='Evento ordine: '+String(type);showOrderFeedback('Aggiornamento da cTrader ricevuto. Controlla ORDINI e protezioni SL/TP.');}
+      });
 
       quoteEvent(state.adapter).subscribe(ev=>{
         if(numValue(getField(ev,['symbolId']))!==state.symbolId) return;
@@ -1031,10 +1269,10 @@
         {const v=getField(ev,['ask']); if(v!=null) state.ask=relPrice(v);}
         if(state.bid&&state.ask) state.mid=(state.bid+state.ask)/2;
         else state.mid=state.bid||state.ask||state.mid;
-        if(!Number.isFinite(state.mid)||state.mid<=0 || (state.bid&&state.ask&&state.bid>state.ask))return;
+        if(!Number.isFinite(state.mid)||state.mid<=0 || !(state.bid>0 && state.ask>0) || state.bid>state.ask)return;
         state.lastQuoteAt=Date.now();
         if(!state.lastPendingCalcAt||Date.now()-state.lastPendingCalcAt>3000){
-          computeLimitSignals();renderMatrixAndLimits();state.lastPendingCalcAt=Date.now();
+          computeLimitSignals();render();state.lastPendingCalcAt=Date.now();
         }
         setStatus(state.dataLoadedAt?'Quote live + storico':'Quote live · storico in attesa','ok');
         $('dataStatus').textContent=state.dataLoadedAt?'Quote live · dati disponibili':'Quote live · attendo storico';
@@ -1063,7 +1301,7 @@
       },30000);
     }catch(err){
       console.error(err);setStatus('Host non connesso','err');
-      showDiag(`v3.0 · Host: ${err?.message||err}`);
+      showDiag(`v3.2 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Apri questa pagina come plugin dentro cTrader. In un browser normale l’SDK non può collegarsi al tuo account.';
       $('symbolPicker').classList.remove('hidden');
@@ -1088,6 +1326,16 @@
     catch{ b.textContent=txt; setTimeout(()=>b.textContent='COPIA PREZZO',1600); }
   });
 
+  $('orderCancel').addEventListener('click',closeOrderDialog);
+  $('orderConfirm').addEventListener('click',submitOrder);
+  $('orderLots').addEventListener('change',()=>{
+    try{const lots=Number($('orderLots').value);const vol=brokerVolume(lots);showOrderFeedback(`Volume valido: ${vol/100} unità. Conferma solo dopo aver controllato.`);}
+    catch(e){showOrderFeedback(e.message,true)}
+  });
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest?.('[data-order-index]');if(!btn)return;
+    openOrderDialog(Number(btn.getAttribute('data-order-index')));
+  });
   connect();
 </script>
 </body>
