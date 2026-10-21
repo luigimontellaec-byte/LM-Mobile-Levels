@@ -139,7 +139,7 @@
 
 
     .waitWhy{font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
-    /* v4.7: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
+    /* v4.8: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
     #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
     .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
     .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
@@ -170,7 +170,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.7</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.8</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -1041,13 +1041,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v4.7 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v4.8 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v4.7 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v4.8 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1166,7 +1166,7 @@
       (side==='BUY'?l.price>entry+minDist:l.price<entry-minDist));
     return !distinctAhead;
   }
-  // v4.7: la resistenza da raggiungere su BUY deve avere origine da swing HIGH,
+  // v4.8: la resistenza da raggiungere su BUY deve avere origine da swing HIGH,
   // un rifiuto ribassista osservato o un massimo H1. Un supporto sopra l'entry
   // senza queste prove non e' automaticamente una resistenza per TP1 (viceversa SELL).
   // I livelli direzionalmente ambigui MA forti restano ostacoli prudenziali.
@@ -1191,7 +1191,7 @@
     const unknown=z.members.every(l=>!(l.sides||[]).length);
     return unknown && z.score>=7.5 && z.members.length>=2;
   }
-  // v4.7: si puo' suggerire una seconda entrata SOLO tra livello confermato
+  // v4.8: si puo' suggerire una seconda entrata SOLO tra livello confermato
   // ed EMA9/21 vicina, e SOLO se almeno una candela chiusa ha testato quella fascia.
   // Non genera entry piu' profonde arbitrarie al solo scopo di migliorare il R:R.
   function preciseEntries(side,proposal,bars,ctx,a,spread){
@@ -1339,7 +1339,7 @@
     if(!Number.isFinite(risk)||risk<minRisk||risk>a*3.0) return null;
     return {sl,risk,method};
   }
-  // v4.7 - un R:R buono NON basta: evita LIMIT troppo lontani, stop nel rumore
+  // v4.8 - un R:R buono NON basta: evita LIMIT troppo lontani, stop nel rumore
   // e pullback che rompono il contesto tecnico prima ancora del possibile fill.
   function limitQualityGate(side,label,entry,sl,live,a,ctx,dirs,spread,proposal,bars){
     if(!Number.isFinite(entry)||!Number.isFinite(sl)||!Number.isFinite(live)||!(a>0))
@@ -1385,7 +1385,7 @@
       return 'Struttura M15/M30/H1 contraria';
     return '';
   }
-  // v4.7: individua un vero swing M5 confermato SOLO con barre chiuse.
+  // v4.8: individua un vero swing M5 confermato SOLO con barre chiuse.
   // Non usa l'estremo arbitrario delle ultime 8 barre per costruire uno SL.
   function confirmedM5Swing(side, bars, a5) {
     if (!bars || bars.length < 45 || !(a5 > 0)) return null;
@@ -1425,7 +1425,40 @@
       kind:buy?'minimo crescente M5':'massimo decrescente M5'};
   }
 
-  // Il solo motore operativo v4.7: M15 direzione, M30 contesto, M5 trigger e SL.
+  // v4.8: valuta la distanza EMA9 sul PREZZO LIMIT, non soltanto sul live.
+  // Sopra la fascia ATR ammette solo recuperi M5 verificati; non forza mai
+  // ingressi estremi. Non allenta gli stop, i target o il R:R minimo.
+  function validateDeepPullback(side,entry,band,c15,c5,m5,m15,a5,a15){
+    if(!state.filterM15)return '';
+    if(!Number.isFinite(c15?.ema9) || !Number.isFinite(c15?.ema21) ||
+       !Number.isFinite(c5?.ema9) || !Number.isFinite(c5?.ema21) ||
+       !(state.pointSize>0) || !(a5>0) || !(a15>0) || !band?.max)
+      return 'EMA/ATR non disponibili per controllo distanza';
+    const deviationPts=Math.abs(entry-c15.ema9)/state.pointSize;
+    // Dentro il massimo: la sola vicinanza alla media (<min) non vieta
+    // uno swing M5 gia' confermato.
+    if(deviationPts<=band.max)return '';
+    if(deviationPts>band.max*1.60)
+      return 'LIMIT troppo lontano dalla EMA9 M15 anche per recupero';
+    const last5=m5.at(-1),prev5=m5.at(-2);
+    const last15=m15.at(-1),prev15=m15.at(-2);
+    if(!last5||!prev5||!last15||!prev15)
+      return 'Candele chiuse insufficienti per recupero M5';
+    const buy=side==='BUY';
+    const recovered=buy?
+      last5.c>c5.ema9 && last5.c>c5.ema21 && last5.c>last5.o && last5.c>prev5.c:
+      last5.c<c5.ema9 && last5.c<c5.ema21 && last5.c<last5.o && last5.c<prev5.c;
+    if(!recovered)return 'Distanza EMA9 elevata: recupero EMA9/21 M5 non confermato';
+    // Due chiusure M15 sotto/sopra EMA21 in controtendenza non equivalgono
+    // a un pullback ancora integro; non utilizzare lo swing M5 per ignorarle.
+    const compromised=buy?
+      last15.c<c15.ema21-a15*.15 && prev15.c<c15.ema21-a15*.15:
+      last15.c>c15.ema21+a15*.15 && prev15.c>c15.ema21+a15*.15;
+    if(compromised)return 'Recupero M5 ma struttura EMA21 M15 compromessa';
+    return '';
+  }
+
+  // Motore operativo v4.8: M15 direzione, M30 contesto, M5 trigger e SL.
   // H1 resta una conferma diagnostica; non crea ordini da sola.
   function computeLimitSignals(){
     state.pending=[];
@@ -1444,7 +1477,10 @@
     if(spread>a5*.18){reject('Spread alto rispetto alla volatilità M5');return;}
     const last5=m5.at(-1),last15=m15.at(-1);
     if(last5.h-last5.l>a5*2.5 || last15.h-last15.l>a15*2.6){reject('Spike su candela chiusa');return;}
-    if(state.filterM15 && !emaM15Band(distanceM15()).ok){reject('Distanza M15–EMA9 fuori fascia ATR');return;}
+    // v4.8: non interrompere la scansione degli swing M5 soltanto per la
+    // distanza del PREZZO LIVE dalla EMA9 M15. Il filtro resta operativo
+    // sul PREZZO D'INGRESSO del candidato e richiede recupero M5 rafforzato.
+    const band=emaM15Band(distanceM15());
     const c15=trendContext('M15'),c30=trendContext('M30'),c5=trendContext('M5');
     const d15=contextDirection(c15),d30=contextDirection(c30),d5=contextDirection(c5);
     const live=(state.bid+state.ask)/2;
@@ -1483,6 +1519,11 @@
       if(buy?entry<c15.ema21-emaBuffer:entry>c15.ema21+emaBuffer){
         reject('Ingresso oltre EMA21 M15');continue;
       }
+      // Fuori dal corridoio EMA9 M15 il candidato non e' escluso a priori:
+      // controlliamo distanza dell'ENTRY e recupero M5/M15 con barre chiuse.
+      // Gli ordini molto estesi restano sempre vietati.
+      const emaFilterReason=validateDeepPullback(side,entry,band,c15,c5,m5,m15,a5,a15);
+      if(emaFilterReason){reject(emaFilterReason);continue;}
       // La struttura locale deve offrire ancora una strada valida da percorrere.
       // Si considera TP1 davanti al primo ostacolo contrario strutturale M15.
       // Convalida esplicitamente la zona origine se coincide con un S/R M15.
@@ -1540,7 +1581,7 @@
     const st=state.limitStats||{reasons:{},scanned:0,patterns:0,valid:0,tf:{}};
     const ordered=Object.entries(st.reasons).sort((a,b)=>b[1]-a[1]);
     const label=state.pending.length?'FILTRI DEI SETUP':'PERCHÉ NESSUN LIMIT?';
-    const summary=`${st.patterns} pattern esaminati · ${st.valid} validi · ${state.pending.length} zone selezionate`;
+    const summary=`${st.scanned} direzioni verificate · ${st.patterns} swing M5 confermati · ${st.valid} validi · ${state.pending.length} LIMIT`;
     const reasons=ordered.slice(0,4).map(([name,count])=>`<span class="reasonChip">${escapeHtml(name)} <b>×${count}</b></span>`).join('');
     const exemplar=rejectedLimitMessage();
     el.innerHTML=`<strong>${label}</strong><div class="diagLine">${summary}</div>`+
@@ -1561,7 +1602,7 @@
       $('emaDistance').textContent=`${d.signed>=0?'+':'−'}${abs} punti ${d.signed>=0?'↑':'↓'}`;
       $('emaDistance').style.color=ok?'var(--green)':'var(--amber)';
       const bandText=state.adaptiveM15?`AUTO ${band.min}–${band.max} pt`:`Fisso ${band.min}–${band.max} pt`;
-      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+bandText+' · '+(state.filterM15?(ok?'in fascia M15':'fuori fascia M15 · filtro informativo'):'filtro spento');
+      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+bandText+' · '+(state.filterM15?(ok?'in fascia M15':'fuori fascia M15 · recupero M5 richiesto'):'filtro spento');
     }
     const moreBtn=$('limitsMoreToggle');
     if(!state.lastQuoteAt||Date.now()-state.lastQuoteAt>180000){
@@ -1777,7 +1818,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v4.7 · Host: ${err?.message||err}`);
+      showDiag(`v4.8 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
