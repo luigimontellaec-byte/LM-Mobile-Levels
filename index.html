@@ -139,7 +139,7 @@
 
 
     .waitWhy{font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
-    /* v4.2: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
+    /* v4.3: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
     #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
     .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
     .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
@@ -170,7 +170,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.2</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.3</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -231,7 +231,7 @@
   <div id="limitCards" class="limitCards"><div class="placeholder">Attendo livelli, matrice e quotazioni…</div></div>
   <button id="limitsMoreToggle" class="limShowMore hidden" type="button" aria-expanded="false">Altri setup ▼</button>
   <div id="limitDiagnostics" class="limitDiag" aria-live="polite"><strong>DIAGNOSTICA LIMIT</strong><div class="diagLine">Attendo candele e prezzi live.</div></div>
-  <div class="limitNote">M1/M5: filtro EMA9 M15. M15/M30: pullback verso supporti/resistenze già testati anche con EMA distante. Solo LIMIT, SL e TP1; ordine dopo conferma.</div>
+  <div class="limitNote">M1/M5: filtro EMA9 M15. M15/M30: pullback verso zone difese e TP1 al primo ostacolo strutturale. Solo LIMIT, SL e TP1; ordine dopo conferma.</div>
 
   <button id="levelsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra livelli ▼</button>
   <div id="levelsDetails" class="hidden">
@@ -348,7 +348,7 @@
     minM15Pts:50, maxM15Pts:300, minLimitScore:65, filterM15:true, adaptiveM15:true, minRR:1.35,
     draft:null,orderBusy:false,submittedKeys:new Set(),orderStatus:'',
     barsByTf:{}, maxEachSide:2, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0, analysisPrice:null, lastM5SignalTime:null,
-    limitStats:{reasons:{},scanned:0,patterns:0,valid:0,tf:{}}, showMoreLimits:false
+    limitStats:{reasons:{},scanned:0,patterns:0,valid:0,tf:{},nearMisses:[]}, showMoreLimits:false
   };
 
   // Usa gli enum ufficiali dell'SDK quando disponibili.
@@ -1037,13 +1037,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v4.2 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v4.3 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v4.2 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v4.3 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1097,23 +1097,74 @@
     const step=Number.isFinite(state.pointSize)&&state.pointSize>0?state.pointSize:Math.pow(10,-state.digits);
     return Number((Math.round(x/step)*step).toFixed(state.digits));
   }
-  function limitTargets(side,entry,stop,scale){
+  // Raggruppa ostacoli vicini (NON sposta TP1 oltre livelli verificati).
+  // Gli intervalli sono basati su ATR del timeframe e spread corrente.
+  // I round numbers isolati non contano come ostacoli finche' non mostrano
+  // una reazione su candele chiuse del timeframe di valutazione.
+  function zoneObstacles(scale){
+    const bars=closedBars(scale);
+    const a=atr(bars,14);
+    const spread=Math.max(0,(state.ask??0)-(state.bid??0));
+    if(!Number.isFinite(a)||a<=0) return [];
+    const touchTol=Math.max(a*.10,spread*1.2,state.pointSize*3);
+    const mergeGap=Math.max(spread*1.5,a*.10,state.pointSize*5);
+    const maxWidth=Math.max(mergeGap,a*.22);
+    // Impedisce di contare un livello psicologico non testato come resistenza.
+    const testedRound=(p)=>{
+      const recent=bars.slice(-50);
+      if(recent.length<10) return false;
+      let r=0;
+      for(const b of recent){
+        if(Math.abs(b.h-p)<=touchTol && b.c<p-touchTol*.30)r++;
+        else if(Math.abs(b.l-p)<=touchTol && b.c>p+touchTol*.30)r++;
+        if(r>=2)return true;
+      }
+      return false;
+    };
+    const items=state.levels.filter(l=>{
+      if(!Number.isFinite(l.price) || l.score<2.4)return false;
+      if(l.kind==='PSY')return testedRound(l.price);
+      // Non eliminare swing piccoli ma autentici: il merge e' su prezzi,
+      // la scelta del primo ostacolo rimane conservativa.
+      return l.kind==='KEY' || (l.tfs||[]).length>0 || (l.touches||0)>1;
+    }).sort((x,y)=>x.price-y.price);
+    const zones=[];
+    for(const l of items){
+      const prev=zones.at(-1);
+      if(prev && l.price-prev.high<=mergeGap && l.price-prev.low<=maxWidth){
+        prev.high=Math.max(prev.high,l.price);
+        prev.members.push(l);
+        prev.score=Math.max(prev.score,l.score);
+      }else zones.push({low:l.price,high:l.price,members:[l],score:l.score});
+    }
+    return zones;
+  }
+  function limitTargets(side,entry,stop,scale,zonesOverride=null){
+    const buy=side==='BUY';
     const risk=Math.abs(entry-stop);
     const spread=Math.max(0,state.ask-state.bid);
-    const atrTf=atr(closedBars(scale),14)||spread*10;
+    const atrTf=atr(closedBars(scale),14);
+    if(!Number.isFinite(risk)||risk<=0||!Number.isFinite(atrTf)||atrTf<=0)
+      return {ok:false,why:'Rischio/ATR non validi',rr:null,tp1:null,obstacle:null};
     const minDist=Math.max(spread*1.2,state.pointSize*3);
-    // Non saltare il primo ostacolo, anche se e' meno importante del successivo.
-    const pool=state.levels.filter(l=>Number.isFinite(l.price)&&l.score>=2.4 &&
-      (side==='BUY'?l.price>entry+minDist:l.price<entry-minDist))
-      .sort((a,b)=>Math.abs(a.price-entry)-Math.abs(b.price-entry));
-    if(!pool.length||risk<=0) return null;
+    const zones=zonesOverride||zoneObstacles(scale);
+    // Una zona contenente l'entry e' un ostacolo IMMEDIATO, non viene saltata.
+    const pool=zones.filter(z=>buy?z.high>entry-minDist:z.low<entry+minDist)
+      .sort((x,y)=>buy?x.low-y.low:y.high-x.high);
+    const obstacle=pool[0]||null;
+    if(!obstacle)return {ok:false,why:'Nessun target strutturale',rr:null,tp1:null,obstacle:null};
     const buffer=Math.max(state.pointSize*2,spread*.25,atrTf*.015);
-    const tp1=priceRound(pool[0].price+(side==='BUY'?-buffer:buffer));
-    const reward=side==='BUY'?tp1-entry:entry-tp1;
-    if(reward<=Math.max(spread*2,state.pointSize*5)) return null;
+    // BUY: TP1 sotto il bordo INFERIORE del primo ostacolo.
+    // SELL: TP1 sopra il bordo SUPERIORE del primo ostacolo.
+    const tp1=priceRound((buy?obstacle.low-buffer:obstacle.high+buffer));
+    const reward=buy?tp1-entry:entry-tp1;
     const rr=reward/risk;
-    if(rr<state.minRR || rr>8) return null;
-    return {tp1,rr,obstacle:pool[0]};
+    if(reward<=Math.max(spread*2,state.pointSize*5))
+      return {ok:false,why:'TP1 troppo vicino',rr:Math.max(0,rr),tp1,obstacle};
+    if(rr<state.minRR)
+      return {ok:false,why:'R:R insufficiente',rr,tp1,obstacle};
+    if(rr>8)return {ok:false,why:'Target/R:R anomalo',rr,tp1,obstacle};
+    return {ok:true,tp1,rr,obstacle,why:''};
   }
   function candleReject(b,level,side,a){
     if(!b || !Number.isFinite(level)||!a) return false;
@@ -1201,11 +1252,17 @@
   function computeLimitSignals(){
     state.pending=[];
     // Queste statistiche indicano condizioni di scarto, non trade ipotetici.
-    const stats={reasons:{},scanned:0,patterns:0,valid:0,tf:{}};
+    const stats={reasons:{},scanned:0,patterns:0,valid:0,tf:{},nearMisses:[]};
     state.limitStats=stats;
     const reject=(why,tag)=>{
       const label=tag?`${tag}: ${why}`:why;
       stats.reasons[label]=(stats.reasons[label]||0)+1;
+    };
+    const noteNearMiss=(side,label,entry,sl,target)=>{
+      if(!target || !Number.isFinite(target.rr) || !Number.isFinite(target.tp1) || target.rr<0)return;
+      // Diagnostica soltanto: MAI trasformare un target scartato in ordine.
+      stats.nearMisses.push({side,tf:label,entry,sl,tp1:target.tp1,rr:target.rr,
+        why:target.why,obstacle:target.obstacle ? (side==='BUY'?target.obstacle.low:target.obstacle.high) : null});
     };
     if(!Number.isFinite(state.bid)||!Number.isFinite(state.ask)||state.ask<=state.bid){reject('Quote bid/ask assenti');return;}
     if(!state.lastQuoteAt||Date.now()-state.lastQuoteAt>180000){reject('Quote non aggiornate');return;}
@@ -1239,6 +1296,7 @@
       if(scalp&&state.filterM15&&!m15Band.ok){
         reject('Distanza M15–EMA9 fuori range ATR',label);continue;
       }
+      const targetZones=zoneObstacles(label); // cache per TF: evita scansioni ripetute sui tick
       const lastN=label==='M1'?20:label==='M5'?16:label==='M15'?30:26;
       const seg=bars.slice(-lastN);
       const low=Math.min(...seg.map(b=>b.l)),high=Math.max(...seg.map(b=>b.h));
@@ -1295,7 +1353,14 @@
             // Serve confluenza con una media O un livello forte confermato da piu' TF.
             const multiTf=(l.tfs||[]).length>=2;
             if(!alignedEma && !(multiTf&&l.score>=6.5))continue;
-            setups.push({entry:priceRound(l.price),level:l,kind:'PULLBACK S/R',
+            // LIMIT leggermente all'interno della fascia gia' testata: per BUY
+            // piu' basso, per SELL piu' alto. MAI oltre la wick d'invalidazione.
+            const wiggle=Math.max(0,side==='BUY'?l.price-d.anchor:d.anchor-l.price);
+            const offset=Math.min(a*.10,wiggle*.25);
+            const suggested=priceRound(l.price+(side==='BUY'?-offset:offset));
+            const margin=Math.max(spread*1.5,a*.12,state.pointSize*5);
+            const safeEntry=side==='BUY'?suggested>d.anchor+margin:suggested<d.anchor-margin;
+            setups.push({entry:safeEntry?suggested:priceRound(l.price),level:l,kind:'PULLBACK S/R',
               quality:d.quality+(alignedEma?3:0),confirmed:d.confirmed,
               anchor:d.anchor,tf:label});
           }
@@ -1332,8 +1397,12 @@
           const structure=structuralStop(side,bars,entry,proposal,a,spread);
           if(!structure){reject('SL strutturale non valido',label);continue;}
           const {sl,risk}=structure;
-          const targets=limitTargets(side,entry,sl,label);
-          if(!targets){reject('TP1/rapporto R:R insufficiente',label);continue;}
+          const targets=limitTargets(side,entry,sl,label,targetZones);
+          if(!targets.ok){
+            reject(targets.why==='R:R insufficiente'?'TP1/rapporto R:R insufficiente':targets.why,label);
+            noteNearMiss(side,label,entry,sl,targets);
+            continue;
+          }
           // Un controtrend e' ammesso SOLO su pattern S/R provato con livello forte,
           // evitando che la stessa EMA si trasformi in un segnale inverso arbitrario.
           if(!localTrend&&!proposal.kind.includes('RIFIUTO S/R')){reject('Trend locale contrario',label);continue;}
@@ -1377,6 +1446,17 @@
     return [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3)
       .map(([name,count])=>`${name} (${count})`);
   }
+  function bestRejectedLimit(){
+    // M15/M30 favoriti a parita' di R:R: diagnosi non e' un segnale.
+    const m=state.limitStats?.nearMisses||[];
+    return m.filter(x=>x.why==='R:R insufficiente'||x.why==='TP1 troppo vicino')
+      .sort((a,b)=>b.rr-a.rr || ((b.tf==='M15'||b.tf==='M30')?1:0)-((a.tf==='M15'||a.tf==='M30')?1:0))[0]||null;
+  }
+  function rejectedLimitMessage(){
+    const x=bestRejectedLimit();
+    if(!x)return '';
+    return `${x.tf} ${x.side} scartato · R:R ${x.rr.toFixed(2)} / ${state.minRR.toFixed(2)} · primo ostacolo a ${fmt(x.tp1)}`;
+  }
   function renderLimitDiagnostics(){
     const el=$('limitDiagnostics');
     const st=state.limitStats||{reasons:{},scanned:0,patterns:0,valid:0,tf:{}};
@@ -1384,7 +1464,9 @@
     const label=state.pending.length?'FILTRI DEI SETUP':'PERCHÉ NESSUN LIMIT?';
     const summary=`${st.patterns} pattern esaminati · ${st.valid} validi · ${state.pending.length} zone selezionate`;
     const reasons=ordered.slice(0,4).map(([name,count])=>`<span class="reasonChip">${escapeHtml(name)} <b>×${count}</b></span>`).join('');
+    const exemplar=rejectedLimitMessage();
     el.innerHTML=`<strong>${label}</strong><div class="diagLine">${summary}</div>`+
+      (exemplar?`<div class="diagLine">Esempio non operativo: ${escapeHtml(exemplar)}</div>`:'')+
       (reasons?`<div class="reasons">${reasons}</div>`:'<div class="diagLine">Nessun blocco rilevato nel calcolo corrente.</div>');
   }
   function renderMatrixAndLimits(){
@@ -1417,7 +1499,7 @@
       return `<div class="limitCard ${side}"><div class="limitHead"><b>${p.side} LIMIT · ${p.tf}</b></div>`+
         `<div class="limitNumbers"><div><small>LIMIT</small><strong>${fmt(p.entry)}</strong></div><div><small>SL</small><strong>${fmt(p.sl)}</strong></div><div><small>TP1</small><strong>${fmt(p.tp1)}</strong></div></div>`+
         `<div class="limitAction"><button type="button" class="actbtn" data-order-index="${ix}" ${!state.connected||state.orderBusy||expireQuote?'disabled':''}>PREPARA ${p.side} LIMIT</button><small>${expireQuote?'Quote da aggiornare':'Conferma obbligatoria'}</small></div></div>`;
-    }).join(''):`<div class="placeholder"><strong>WAIT · Nessun LIMIT valido ora.</strong><div class="waitWhy">${compactRejectionReasons().map(escapeHtml).join(' · ')||'Mancano conferme strutturali.'}</div></div>`;
+    }).join(''):`<div class="placeholder"><strong>WAIT · Nessun LIMIT valido ora.</strong><div class="waitWhy">${compactRejectionReasons().map(escapeHtml).join(' · ')||'Mancano conferme strutturali.'}${rejectedLimitMessage()?'<div class="diagLine" style="margin-top:5px">'+escapeHtml(rejectedLimitMessage())+'</div>':''}</div></div>`;
     moreBtn.classList.toggle('hidden',state.pending.length<=2);
     moreBtn.textContent=state.showMoreLimits?'Nascondi setup secondari ▲':`Mostra altri ${Math.max(0,state.pending.length-2)} setup ▼`;
     moreBtn.setAttribute('aria-expanded',state.showMoreLimits?'true':'false');
@@ -1617,7 +1699,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v4.2 · Host: ${err?.message||err}`);
+      showDiag(`v4.3 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
