@@ -139,7 +139,7 @@
 
 
     .waitWhy{font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
-    /* v4.3: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
+    /* v4.4: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
     #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
     .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
     .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
@@ -170,7 +170,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.3</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.4</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -1037,13 +1037,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v4.3 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v4.4 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v4.3 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v4.4 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1139,24 +1139,54 @@
     }
     return zones;
   }
-  function limitTargets(side,entry,stop,scale,zonesOverride=null){
+  // Una zona di ingresso confermata non e' automaticamente una resistenza/ supporto
+  // contrario. La distinzione richiede una proposta con livello identificabile,
+  // pattern confermato, SL oltre tutta la zona e barra chiusa dalla parte giusta.
+  // In presenza di un ALTRO livello indipendente contrario nella stessa zona,
+  // NON ignoriamo la zona: il target resta bloccato.
+  function isConfirmedEntryZone(side,entry,stop,scale,proposal,z,minDist,atrTf){
+    if(!proposal || !proposal.confirmed || !proposal.level || !z.members.includes(proposal.level))return false;
+    const kind=String(proposal.kind||'');
+    const supported=kind==='PULLBACK S/R'||kind==='RIFIUTO S/R'||
+      kind==='BREAKOUT + RETEST'||kind.includes(' + S/R');
+    if(!supported)return false;
+    if(entry<z.low-minDist || entry>z.high+minDist)return false;
+    if(Math.abs(entry-proposal.level.price)>Math.max(atrTf*.25,minDist*2))return false;
+    if(!(side==='BUY'?stop<z.low-minDist:stop>z.high+minDist))return false;
+    const bars=closedBars(scale),last=bars.at(-1);
+    if(!last || !(side==='BUY'?last.c>proposal.level.price:last.c<proposal.level.price))return false;
+    if(kind.includes(' + S/R') && !bars.slice(-3).some(b=>candleReject(b,proposal.level.price,side,atrTf)))return false;
+    // Un secondo livello piu' avanti e distante dall'entry e' un ostacolo
+    // indipendente, anche se la fusione ATR lo ha messo nello stesso gruppo.
+    const distinctAhead=z.members.some(l=>l!==proposal.level &&
+      (side==='BUY'?l.price>entry+minDist:l.price<entry-minDist));
+    return !distinctAhead;
+  }
+  function limitTargets(side,entry,stop,scale,zonesOverride=null,proposal=null){
     const buy=side==='BUY';
-    const risk=Math.abs(entry-stop);
+    const risk=buy?entry-stop:stop-entry;
     const spread=Math.max(0,state.ask-state.bid);
     const atrTf=atr(closedBars(scale),14);
     if(!Number.isFinite(risk)||risk<=0||!Number.isFinite(atrTf)||atrTf<=0)
       return {ok:false,why:'Rischio/ATR non validi',rr:null,tp1:null,obstacle:null};
     const minDist=Math.max(spread*1.2,state.pointSize*3);
     const zones=zonesOverride||zoneObstacles(scale);
-    // Una zona contenente l'entry e' un ostacolo IMMEDIATO, non viene saltata.
-    const pool=zones.filter(z=>buy?z.high>entry-minDist:z.low<entry+minDist)
+    const entryZone=zones.find(z=>isConfirmedEntryZone(side,entry,stop,scale,proposal,z,minDist,atrTf))||null;
+    // Se una zona NON validata come origine del setup insiste sull'entry,
+    // non si puo' saltare per scegliere un TP piu' lontano.
+    const ambiguous=zones.some(z=>z!==entryZone &&
+      (buy?z.low<=entry+minDist && z.high>entry-minDist:
+           z.high>=entry-minDist && z.low<entry+minDist));
+    if(ambiguous)return {ok:false,why:'Ostacolo sovrapposto all’ingresso',rr:null,tp1:null,obstacle:null};
+    // Primo ostacolo indipendente DOPO la zona di origine, mai il livello
+    // che giustifica l'entrata; per BUY il suo bordo inferiore, per SELL quello superiore.
+    const pool=zones.filter(z=>z!==entryZone &&
+      (buy?z.low>entry+minDist:z.high<entry-minDist))
       .sort((x,y)=>buy?x.low-y.low:y.high-x.high);
     const obstacle=pool[0]||null;
-    if(!obstacle)return {ok:false,why:'Nessun target strutturale',rr:null,tp1:null,obstacle:null};
+    if(!obstacle)return {ok:false,why:'Nessun ostacolo contrario verificato per TP1',rr:null,tp1:null,obstacle:null};
     const buffer=Math.max(state.pointSize*2,spread*.25,atrTf*.015);
-    // BUY: TP1 sotto il bordo INFERIORE del primo ostacolo.
-    // SELL: TP1 sopra il bordo SUPERIORE del primo ostacolo.
-    const tp1=priceRound((buy?obstacle.low-buffer:obstacle.high+buffer));
+    const tp1=priceRound(buy?obstacle.low-buffer:obstacle.high+buffer);
     const reward=buy?tp1-entry:entry-tp1;
     const rr=reward/risk;
     if(reward<=Math.max(spread*2,state.pointSize*5))
@@ -1164,7 +1194,7 @@
     if(rr<state.minRR)
       return {ok:false,why:'R:R insufficiente',rr,tp1,obstacle};
     if(rr>8)return {ok:false,why:'Target/R:R anomalo',rr,tp1,obstacle};
-    return {ok:true,tp1,rr,obstacle,why:''};
+    return {ok:true,tp1,rr,obstacle,why:'',entryZone:!!entryZone};
   }
   function candleReject(b,level,side,a){
     if(!b || !Number.isFinite(level)||!a) return false;
@@ -1397,7 +1427,7 @@
           const structure=structuralStop(side,bars,entry,proposal,a,spread);
           if(!structure){reject('SL strutturale non valido',label);continue;}
           const {sl,risk}=structure;
-          const targets=limitTargets(side,entry,sl,label,targetZones);
+          const targets=limitTargets(side,entry,sl,label,targetZones,proposal);
           if(!targets.ok){
             reject(targets.why==='R:R insufficiente'?'TP1/rapporto R:R insufficiente':targets.why,label);
             noteNearMiss(side,label,entry,sl,targets);
@@ -1416,7 +1446,7 @@
           const score=Math.max(0,Math.min(96,Math.round(points)));
           const minScore=proposal.kind==='RIFIUTO S/R'&&!localTrend?Math.max(76,state.minLimitScore):state.minLimitScore;
           if(score<minScore){reject('Punteggio/confluenze insufficienti',label);continue;}
-          const reason=`${proposal.kind} su ${label}; ${localTrend?'trend locale':'rifiuto confermato'}; ${align} TF concordi, ${opposed} contrari. SL: ${structure.method}. TP1 prima del livello ${fmt(targets.obstacle.price)}. R:R ${targets.rr.toFixed(2)}.`;
+          const reason=`${proposal.kind} su ${label}; ${localTrend?'trend locale':'rifiuto confermato'}; ${align} TF concordi, ${opposed} contrari. SL: ${structure.method}. TP1 prima della zona ${fmt(side==='BUY'?targets.obstacle.low:targets.obstacle.high)}. R:R ${targets.rr.toFixed(2)}.`;
           stats.tf[label].accepted++;
           stats.valid++;
           candidates.push({side,tf:label,entry,sl,tp1:targets.tp1,rr:targets.rr,score,basis:proposal.kind,reason});
@@ -1455,7 +1485,7 @@
   function rejectedLimitMessage(){
     const x=bestRejectedLimit();
     if(!x)return '';
-    return `${x.tf} ${x.side} scartato · R:R ${x.rr.toFixed(2)} / ${state.minRR.toFixed(2)} · primo ostacolo a ${fmt(x.tp1)}`;
+    return `${x.tf} ${x.side} scartato · LIMIT ${fmt(x.entry)} · SL ${fmt(x.sl)} · TP1 ${fmt(x.tp1)} · R:R ${x.rr.toFixed(2)} / ${state.minRR.toFixed(2)} · ${x.why}`;
   }
   function renderLimitDiagnostics(){
     const el=$('limitDiagnostics');
@@ -1699,7 +1729,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v4.3 · Host: ${err?.message||err}`);
+      showDiag(`v4.4 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
