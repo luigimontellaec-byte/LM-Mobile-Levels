@@ -1647,7 +1647,15 @@
     if(Date.now()-last5.t>12*60000 || Date.now()-last15.t>35*60000){
       reject('Candele M5/M15 non aggiornate');return;
     }
-    if(last5.h-last5.l>a5*2.5 || last15.h-last15.l>a15*2.6){reject('Spike su candela chiusa');return;}
+    // Spike reale: il filtro resta attivo e riporta il rapporto con ATR del singolo asset.
+    const validOhlc=b=>[b.o,b.h,b.l,b.c,b.t].every(Number.isFinite) &&
+      b.h>=Math.max(b.o,b.c,b.l) && b.l<=Math.min(b.o,b.c,b.h);
+    if(!validOhlc(last5)||!validOhlc(last15)){reject('Dati OHLC M5/M15 non validi');return;}
+    const spike5=(last5.h-last5.l)/a5, spike15=(last15.h-last15.l)/a15;
+    const spikes=[];
+    if(spike5>2.5)spikes.push('M5 '+spike5.toFixed(2)+'x ATR (max 2.50)');
+    if(spike15>2.6)spikes.push('M15 '+spike15.toFixed(2)+'x ATR (max 2.60)');
+    if(spikes.length){reject('Spike su '+spikes.join(' · ')+': attendi nuova chiusura');return;}
     // v5.0: non interrompere la scansione degli swing M5 soltanto per la
     // distanza del PREZZO LIVE dalla EMA9 M15. Il filtro resta operativo
     // sul PREZZO D'INGRESSO del candidato e richiede recupero M5 rafforzato.
@@ -2078,7 +2086,13 @@
       if(q)return q;
       await new Promise(resolve=>setTimeout(resolve,250));
     }
-    throw new Error('bid/ask live assenti o scaduti (riprova o verifica sessione broker)');
+    const lastQuote=scan.quotes.get(id);
+    const missing=[];
+    if(!(lastQuote?.bid>0))missing.push('bid');
+    if(!(lastQuote?.ask>0))missing.push('ask');
+    if(missing.length)throw new Error('Quotazione '+missing.join(' e ')+' assente dal broker');
+    if(!(lastQuote.ask>lastQuote.bid))throw new Error('Bid/ask incoerenti');
+    throw new Error('Bid/ask scaduti (>45s): verifica sessione broker');
   }
   function evaluateScannerSymbol(ctx){
     // Condivisione del motore di analisi, ma nessun cambio persistente del simbolo sul pannello.
