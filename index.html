@@ -72,12 +72,42 @@
     .section{margin-top:5px}.sectionhead{padding:0 1px 2px}.sectionhead h2{font-size:10px}.sectionhead .count{font-size:9px}.levels{border-radius:9px}.level{grid-template-columns:48px 1fr auto;gap:5px;padding:5px 6px}.tag{font-size:9px}.lvprice{font-size:12px;line-height:1}.meta{margin-top:1px;font-size:8px}.score{min-width:42px}.stars{font-size:9px}.dist{font-size:7.5px;margin-top:1px}.copybtn{padding:2px 4px;font-size:7.5px;margin-top:2px}
     .controls{gap:5px;margin-top:6px}.btn,.input{padding:6px 7px;font-size:10px;border-radius:8px}.symbolpicker{margin-top:5px;gap:4px}.notice,.legend{display:none!important}
     @media (max-width:390px){#app{padding:2px 3px calc(6px + env(safe-area-inset-bottom))}.brand{font-size:10.5px}.symbol{font-size:15px}.price{font-size:15px}.sub{font-size:7.5px}.mini span{font-size:9.3px}.signalname{font-size:12px}.signalbadge{font-size:8px}.quickcell span{font-size:8.4px}.planrow{font-size:8.4px}.lvprice{font-size:11.5px}}
+
+    /* v3.0 - SIMPLE + STABLE */
+    .hero .sub{opacity:.8}
+    .signalbox{padding:7px}
+    .signalhead{margin-bottom:4px}
+    .signalbadge{color:var(--muted);font-weight:700}
+    .quickbar{grid-template-columns:58px 1fr}
+    .planbox{border-color:rgba(104,167,255,.22)}
+    .planrow{font-size:9.2px}
+    #levelsToggle{margin-top:5px}
+    #levelsDetails{margin-top:0}
+    .scorewhy,.sigwarn{opacity:.8}
+
+    .extraHead{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.4px;margin:10px 2px 5px}
+    .extraHead span{font-size:9px;font-weight:600;letter-spacing:0}
+    .trendMatrix{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+    .tfCell{border:1px solid var(--line);background:var(--card);border-radius:8px;text-align:center;padding:7px 2px;min-width:0}
+    .tfCell strong{display:block;font-size:10px}.tfCell .arrow{display:block;font-size:16px;font-weight:900;margin:1px 0}.tfCell small{display:block;font-size:8px;color:var(--muted)}
+    .tfCell.up .arrow{color:var(--green)}.tfCell.down .arrow{color:var(--red)}.tfCell.flat .arrow{color:var(--amber)}
+    .emaBox{margin-top:7px;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .emaBox b{font-size:10px;color:var(--muted)}.emaBox #emaDistance{font-size:15px;font-weight:900;margin:2px 0}.emaBox small{font-size:9px;color:var(--muted)}
+    .emaConfig{display:flex;gap:4px;align-items:center}.emaConfig label{font-size:8px;color:var(--muted)}.emaConfig input[type=number]{width:45px;display:block;border:1px solid var(--line);border-radius:5px;background:var(--card2);color:var(--text);font-size:10px;padding:5px 3px}.emaConfig .check{display:flex;flex-direction:column;align-items:center}
+    .limitCards{display:grid;gap:6px}.limitCard{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px}
+    .limitHead{display:flex;justify-content:space-between;align-items:center;gap:6px}.limitHead b{font-size:12px}.limitHead em{font-size:9px;font-style:normal;color:var(--muted)}
+    .limitCard.buy .limitHead b{color:var(--green)}.limitCard.sell .limitHead b{color:var(--red)}
+    .limitNumbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:6px 0}
+    .limitNumbers div{background:var(--card2);border-radius:7px;padding:5px 3px;min-width:0}.limitNumbers small{display:block;font-size:8px;color:var(--muted)}.limitNumbers strong{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .limitReason,.limitNote,.placeholder{font-size:10px;color:var(--muted);line-height:1.4}
+    .placeholder{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:12px}
+    .limitNote{margin:5px 2px}
   </style>
 </head>
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v2.1</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.0</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -87,8 +117,8 @@
     <div class="symbolrow"><div id="symbolName" class="symbol">—</div><div id="currentPrice" class="price">—</div></div>
     <div class="sub"><span id="spreadText">Spread —</span><span id="updatedText">Aggiornamento —</span><span id="placementText"></span></div>
     <div class="range">
-      <div class="mini"><b>LIVELLO PIÙ VICINO</b><span id="nearestLevel">—</span></div>
-      <div class="mini"><b>CONFLUENZA VICINA</b><span id="strongestLevel">—</span></div>
+      <div class="mini"><b>SUPPORTO</b><span id="nearestLevel">—</span></div>
+      <div class="mini"><b>RESISTENZA</b><span id="strongestLevel">—</span></div>
     </div>
     <div id="symbolPicker" class="symbolpicker hidden">
       <input id="symbolInput" class="input" placeholder="Simbolo, es. XAUUSD" autocomplete="off" />
@@ -99,19 +129,19 @@
   <div id="signalBox" class="signalbox">
     <div class="signalhead">
       <div id="signalName" class="signalname wait">WAIT</div>
-      <div id="signalBadge" class="signalbadge">M5 · —/100</div>
+      <div id="signalBadge" class="signalbadge">M5 · CHIUSA</div>
     </div>
     <div class="quickbar">
       <div class="quickcell"><b>BIAS</b><span id="signalBias" class="bias-neutral">NEUTRO</span></div>
-      <div class="quickcell"><b>PERCHÉ ORA</b><span id="signalWhy">Attendo dati…</span></div>
+      <div class="quickcell"><b>LETTURA</b><span id="signalWhy">Attendo dati…</span></div>
     </div>
     <div class="planbox">
-      <div class="planhead"><b>PIANO ATTUALE</b><span id="m5Countdown" class="countdown">Chiusura M5 —</span></div>
+      <div class="planhead"><b>COSA FARE</b><span id="m5Countdown" class="countdown">Prossima M5 —</span></div>
       <div id="planPrimary" class="planrow neutral">Attendo livelli…</div>
       <div id="planSecondary" class="planrow neutral"></div>
       <div id="planRisk" class="planrow neutral"></div>
     </div>
-    <button id="detailsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra dettagli setup ▼</button>
+    <button id="detailsToggle" class="detailsbtn" type="button" aria-expanded="false">Dettagli ▼</button>
     <div id="signalDetails" class="signaldetails hidden">
       <div class="signalgrid">
         <div class="sigcell"><b>ZONA ATTUALE</b><span id="signalZone">—</span></div>
@@ -127,6 +157,18 @@
     </div>
   </div>
 
+  <div class="extraHead">MATRICE TREND <span id="dataStatus">Dati non caricati</span></div>
+  <div id="trendMatrix" class="trendMatrix"><div class="placeholder">Attendo dati cTrader…</div></div>
+  <div class="emaBox">
+    <div><b>M15 ↔ EMA 9</b><div id="emaDistance">— punti</div><small id="emaBandState">Filtro 50–300 punti</small></div>
+    <div class="emaConfig"><label>Min <input id="minM15" type="number" min="0" step="5" value="50" /></label><label>Max <input id="maxM15" type="number" min="1" step="10" value="300" /></label><label class="check"><input id="useM15" type="checkbox" checked />Filtro</label></div>
+  </div>
+  <div class="extraHead">ORDINI LIMIT SUGGERITI <span id="limitsCount">—</span></div>
+  <div id="limitCards" class="limitCards"><div class="placeholder">Attendo livelli, matrice e quotazioni…</div></div>
+  <div class="limitNote">Segnali indicativi, non ordini inviati. Prezzi basati sul feed del tuo cTrader, SL sulla struttura e TP su livelli verificati. Ricontrollare spread e notizie prima di operare.</div>
+
+  <button id="levelsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra livelli ▼</button>
+  <div id="levelsDetails" class="hidden">
   <div class="section">
     <div class="sectionhead"><h2>Resistenze</h2><span id="rCount" class="count"></span></div>
     <div id="resistanceList" class="levels"><div class="level loading">Analisi livelli…</div></div>
@@ -146,6 +188,7 @@
     <button id="refreshBtn" class="btn">↻ Aggiorna livelli</button>
     <button id="moreBtn" class="btn">Mostra più livelli</button>
   </div>
+  </div>
   <div id="notice" class="notice">Il plugin usa solo dati del tuo cTrader. Nessun login esterno e nessun ordine automatico.</div>
   <div class="legend"><span class="pill">★★★ molto forte</span><span class="pill">★★ forte</span><span class="pill">★ utile</span></div>
 </div>
@@ -156,11 +199,11 @@
     getLightSymbolList, getSymbol, getTrendbarList,
     handleConfirmEvent, quoteEvent, registerEvent, subscribeQuotes, ServerInterfaces
   } from "https://esm.sh/@spotware-web-team/sdk";
-  import { take, catchError, firstValueFrom } from "https://esm.sh/rxjs";
+  import { take, catchError, firstValueFrom, timeout } from "https://esm.sh/rxjs";
   import { createLogger } from "https://esm.sh/@veksa/logger";
 
   const qs = new URLSearchParams(location.search);
-  const initialSymbol = (qs.get('symbol') || '').trim();
+  const initialSymbol = (qs.get('symbol') || 'XAUUSD').trim().toUpperCase();
   const theme = (qs.get('theme') || 'dark').toLowerCase();
   const placement = qs.get('placement') || '';
   if (theme === 'light') document.body.classList.add('light');
@@ -168,8 +211,10 @@
 
   const state = {
     adapter:null, connected:false, symbolName:initialSymbol, symbolId:null, symbolInfo:null,
-    bid:null, ask:null, mid:null, digits:2, pipSize:0.01, levels:[], keyLevels:[],
-    barsByTf:{}, maxEachSide:5, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0
+    bid:null, ask:null, mid:null, digits:2, pipSize:0.01, pointSize:0.01, levels:[], keyLevels:[],
+    lastQuoteAt:0, dataLoadedAt:0, loadingSeq:0, loading:false, loadErrors:[], pending:[],
+    minM15Pts:50, maxM15Pts:300, minLimitScore:65, filterM15:true,
+    barsByTf:{}, maxEachSide:2, quoteSub:null, refreshTimer:null, signalRefreshTimer:null, signalRefreshing:false, subscribedIds:new Set(), signal:null, lastSignalCalcAt:0, analysisPrice:null, lastM5SignalTime:null
   };
 
   // Usa gli enum ufficiali dell'SDK quando disponibili.
@@ -177,16 +222,14 @@
   const PTF = ServerInterfaces?.ProtoTimeframe || {};
   const PTB = ServerInterfaces?.ProtoTrendbarPeriod || {};
   const BAR_TYPE = ServerInterfaces?.ProtoTrendbarType?.REGULAR_OHLC ?? 0;
+  // Timeframe intraday e scalping: volutamente nessun H4/D1/W1.
   const TF = [
-    {label:'M5',  period:PTF.M5  ?? 5,  legacy:PTB.M5  ?? 5,  responsePeriod:5,  minutes:5,     count:320, pivot:3, weight:0.75},
-    {label:'M15', period:PTF.M15 ?? 11, legacy:PTB.M15 ?? 7,  responsePeriod:7,  minutes:15,    count:240, pivot:3, weight:1.00},
-    {label:'M30', period:PTF.M30 ?? 13, legacy:PTB.M30 ?? 8,  responsePeriod:8,  minutes:30,    count:220, pivot:3, weight:1.20},
-    {label:'H1',  period:PTF.H1  ?? 15, legacy:PTB.H1  ?? 9,  responsePeriod:9,  minutes:60,    count:240, pivot:3, weight:1.65},
-    {label:'H4',  period:PTF.H4  ?? 18, legacy:PTB.H4  ?? 10, responsePeriod:10, minutes:240,   count:220, pivot:2, weight:2.25},
-    {label:'D1',  period:PTF.D1  ?? 22, legacy:PTB.D1  ?? 12, responsePeriod:12, minutes:1440,  count:120, pivot:2, weight:3.00},
-    {label:'W1',  period:PTF.W1  ?? 25, legacy:PTB.W1  ?? 13, responsePeriod:13, minutes:10080, count:60,  pivot:1, weight:3.60},
+    {label:'M1',  period:PTF.M1 ?? 1,  legacy:PTB.M1 ?? 1,  responsePeriod:1, minutes:1, count:240, pivot:3, weight:.45},
+    {label:'M5',  period:PTF.M5 ?? 5,  legacy:PTB.M5 ?? 5,  responsePeriod:5, minutes:5, count:240, pivot:3, weight:.80},
+    {label:'M15', period:PTF.M15 ?? 11, legacy:PTB.M15 ?? 7, responsePeriod:7, minutes:15, count:230, pivot:3, weight:1.25},
+    {label:'M30', period:PTF.M30 ?? 13, legacy:PTB.M30 ?? 8, responsePeriod:8, minutes:30, count:180, pivot:3, weight:1.45},
+    {label:'H1',  period:PTF.H1 ?? 15, legacy:PTB.H1 ?? 9, responsePeriod:9, minutes:60, count:140, pivot:3, weight:1.90},
   ];
-
   const $ = id => document.getElementById(id);
   const setStatus = (txt, kind='') => { $('statusText').textContent=txt; $('dot').className='dot '+kind; };
   const showDiag = (msg='') => { const el=$('diagTop'); if(!msg){el.textContent='';el.classList.add('hidden');return;} el.textContent=msg;el.classList.remove('hidden'); };
@@ -333,7 +376,7 @@
     const raw=[];
 
     for(const cfg of TF){
-      const bars=state.barsByTf[cfg.label]||[];
+      const bars=closedBars(cfg.label);
       for(const p of pivots(bars,cfg.pivot)){
         const ageDays = p.t ? Math.max(0,(Date.now()-p.t)/86400000) : 0;
         const recency = Math.max(.55,1-Math.min(ageDays,90)/190);
@@ -345,7 +388,7 @@
     const merged=clusters.map(c=>{
       const tfs=[...new Set(c.items.map(i=>i.tf))];
       const touches=c.items.length;
-      const hasHighTf=tfs.some(x=>['H4','D1','W1'].includes(x));
+      const hasHighTf=tfs.includes('H1');
       const perTf=new Map();
       for(const i of c.items) perTf.set(i.tf, Math.max(perTf.get(i.tf)||0, i.weight));
       const base=[...perTf.values()].reduce((a,b)=>a+b,0);
@@ -354,25 +397,18 @@
       return {price:c.price, score, touches, tfs, kind:'S/R', label:'S/R', note:`${tfs.join(' + ')} · ${touches} tocchi`};
     });
 
-    const d=state.barsByTf.D1||[], w=state.barsByTf.W1||[];
+    // Livelli chiave intraday ricavati SOLO da candele H1 chiuse.
+    const h1=closedBars('H1');
     const key=[];
-    if(d.length){
-      const cur=d[d.length-1], prev=d[d.length-2];
-      if(cur){
-        key.push({price:cur.o,score:8.0,label:'OPEN OGGI',kind:'KEY',note:'Apertura giornaliera'});
-        key.push({price:cur.h,score:6.7,label:'HIGH OGGI',kind:'KEY',note:'Massimo giornaliero'});
-        key.push({price:cur.l,score:6.7,label:'LOW OGGI',kind:'KEY',note:'Minimo giornaliero'});
+    if(h1.length>=4){
+      const session=h1.slice(-12), prior=h1.slice(-24,-12);
+      const sh=Math.max(...session.map(b=>b.h)), sl=Math.min(...session.map(b=>b.l));
+      key.push({price:sh,score:7.0,label:'H1 HIGH',kind:'KEY',note:'Massimo delle ultime 12 H1 chiuse'});
+      key.push({price:sl,score:7.0,label:'H1 LOW',kind:'KEY',note:'Minimo delle ultime 12 H1 chiuse'});
+      if(prior.length){
+        key.push({price:Math.max(...prior.map(b=>b.h)),score:6.6,label:'H1 PREV H',kind:'KEY',note:'Massimo del blocco H1 precedente'});
+        key.push({price:Math.min(...prior.map(b=>b.l)),score:6.6,label:'H1 PREV L',kind:'KEY',note:'Minimo del blocco H1 precedente'});
       }
-      if(prev){
-        key.push({price:prev.h,score:8.8,label:'PDH',kind:'KEY',note:'Massimo giorno precedente'});
-        key.push({price:prev.l,score:8.8,label:'PDL',kind:'KEY',note:'Minimo giorno precedente'});
-        key.push({price:prev.c,score:7.1,label:'PDC',kind:'KEY',note:'Chiusura giorno precedente'});
-      }
-    }
-    if(w.length>=2){
-      const prevW=w[w.length-2];
-      key.push({price:prevW.h,score:9.4,label:'PWH',kind:'KEY',note:'Massimo settimana precedente'});
-      key.push({price:prevW.l,score:9.4,label:'PWL',kind:'KEY',note:'Minimo settimana precedente'});
     }
 
     if(state.mid){
@@ -403,7 +439,12 @@
     }
     state.levels=final;
     state.keyLevels=key.filter(x=>x.kind==='KEY');
+    const m5Closed=closedBars('M5');
+    const lastClosed=m5Closed.at(-1);
+    if(lastClosed){ state.analysisPrice=lastClosed.c; state.lastM5SignalTime=lastClosed.t; }
+    else if(!state.analysisPrice) state.analysisPrice=state.mid;
     computeSignal();
+    computeLimitSignals();
     render();
   }
 
@@ -438,7 +479,7 @@
     else if(e9<e21 && last<e9 && slope<-threshold){dir='RIBASSISTA';strength=-1;}
     else if(e9>e21){dir='RIALZISTA DEBOLE';strength=.45;}
     else if(e9<e21){dir='RIBASSISTA DEBOLE';strength=-.45;}
-    return {dir,strength,ema9:e9,ema21:e21};
+    return {dir,strength,ema9:e9,ema21:e21,slope,last,atr:atr(bars,14)};
   }
 
   function strengthWord(score){ return score>=85?'MOLTO FORTE':score>=75?'FORTE':score>=65?'IN FORMAZIONE':'ATTESA'; }
@@ -446,15 +487,16 @@
   function copyPriceText(v){ return Number.isFinite(v) ? v.toFixed(state.digits) : ''; }
 
   function nearestSupportResistance(){
-    if(!state.mid || !state.levels.length) return {support:null,resistance:null};
+    const ref=state.analysisPrice||state.mid;
+    if(!ref || !state.levels.length) return {support:null,resistance:null};
     const valid=state.levels.filter(x=>Number.isFinite(x.price));
     // Il piano operativo deve riferirsi al primo ostacolo reale vicino al prezzo,
     // non saltarlo solo perché ha un punteggio inferiore a un livello lontano.
     // Preferiamo livelli almeno discreti; se non ce ne sono, usiamo comunque il più vicino.
     const meaningful=valid.filter(x=>(Number(x.score)||0)>=2.4);
     const pool=meaningful.length?meaningful:valid;
-    const support=pool.filter(x=>x.price<state.mid).sort((a,b)=>b.price-a.price)[0]||null;
-    const resistance=pool.filter(x=>x.price>state.mid).sort((a,b)=>a.price-b.price)[0]||null;
+    const support=pool.filter(x=>x.price<ref).sort((a,b)=>b.price-a.price)[0]||null;
+    const resistance=pool.filter(x=>x.price>ref).sort((a,b)=>a.price-b.price)[0]||null;
     return {support,resistance};
   }
 
@@ -469,36 +511,33 @@
     let sec=300-((d.getMinutes()*60+d.getSeconds())%300);
     if(sec===300) sec=0;
     const mm=String(Math.floor(sec/60)).padStart(2,'0'), ss=String(sec%60).padStart(2,'0');
-    return `Chiusura M5 ${mm}:${ss}`;
+    return `Prossima M5 ${mm}:${ss}`;
   }
 
   function renderPlan(){
     const s=state.signal;
     $('m5Countdown').textContent=m5CountdownText();
     const {support,resistance}=nearestSupportResistance();
-    const bearish=(s?.context||'').includes('RIBASSISTA / RIBASSISTA');
-    const bullish=(s?.context||'').includes('RIALZISTA / RIALZISTA');
+    const bearish=(s?.context||'').includes('RIBASSISTA');
+    const bullish=(s?.context||'').includes('RIALZISTA');
     const set=(id,text,cls='neutral')=>{ const el=$(id); el.textContent=text||''; el.className=`planrow ${cls}`; };
     if(s && (s.side==='BUY'||s.side==='SELL') && s.score>=75){
-      set('planPrimary',`${s.side==='BUY'?'🟢':'🔴'} ${s.name} @ ${Number.isFinite(s.entry)?fmt(s.entry):'—'}`,s.side==='BUY'?'buy':'sell');
-      set('planSecondary',`SL ${Number.isFinite(s.invalid)?fmt(s.invalid):'—'} · TP1 ${Number.isFinite(s.tp1)?fmt(s.tp1):'—'} · TP2 ${Number.isFinite(s.tp2)?fmt(s.tp2):'—'}`,'neutral');
-      const rr=rrToTp1(s); set('planRisk',Number.isFinite(rr)?`R:R TP1 ${rr.toFixed(2)}R`:'',Number.isFinite(rr)&&rr>=1.2?'buy':'neutral');
+      set('planPrimary',`${s.side}: ${s.name} ${Number.isFinite(s.entry)?fmt(s.entry):''}`,s.side==='BUY'?'buy':'sell');
+      set('planSecondary',`SL ${Number.isFinite(s.invalid)?fmt(s.invalid):'—'} · TP1 ${Number.isFinite(s.tp1)?fmt(s.tp1):'—'}`,'neutral');
+      set('planRisk','Segnale valido fino alla prossima chiusura M5.','neutral');
       return;
     }
-    const sellPlan=support?`🔴 SELL < ${fmt(support.price)} + retest M5`:'🔴 SELL: attendi supporto';
-    const buyPlan=resistance?`🟢 BUY > ${fmt(resistance.price)} + retest M5`:'🟢 BUY: attendi resistenza';
-    if(bearish && support){
-      set('planPrimary',sellPlan,'sell');
-      set('planSecondary',support?`🟢 BUY: rifiuto M5 ${fmt(support.price)}`:'','buy');
-    } else if(bullish && resistance){
-      set('planPrimary',buyPlan,'buy');
-      set('planSecondary',resistance?`🔴 SELL: rifiuto M5 ${fmt(resistance.price)}`:'','sell');
+    if(bearish){
+      set('planPrimary',support?`SELL solo sotto ${fmt(support.price)} + retest`:'SELL: attendi supporto','sell');
+      set('planSecondary',resistance?`Oppure rifiuto M5 di ${fmt(resistance.price)}`:'','sell');
+    } else if(bullish){
+      set('planPrimary',resistance?`BUY solo sopra ${fmt(resistance.price)} + retest`:'BUY: attendi resistenza','buy');
+      set('planSecondary',support?`Oppure rifiuto M5 di ${fmt(support.price)}`:'','buy');
     } else {
-      set('planPrimary',sellPlan,'sell');
-      set('planSecondary',buyPlan,'buy');
+      set('planPrimary','WAIT: nessun vantaggio chiaro.','neutral');
+      set('planSecondary',support&&resistance?`Range ${fmt(support.price)} / ${fmt(resistance.price)}`:'','neutral');
     }
-    const rr=rrToTp1(s);
-    set('planRisk',Number.isFinite(rr)?`R:R potenziale ${rr.toFixed(2)}R`:'','neutral');
+    set('planRisk','Analisi bloccata fino alla prossima chiusura M5.','neutral');
   }
 
   function getTargets(side, entry, excludePrice=null){
@@ -510,13 +549,14 @@
   }
 
   function computeSignal(){
-    if(!state.mid || !state.levels.length){ state.signal=null; return; }
+    const ref=state.analysisPrice||state.mid;
+    if(!ref || !state.levels.length){ state.signal=null; return; }
     const m5=closedBars('M5');
     if(m5.length<35){
       state.signal={side:'WAIT',score:0,name:'WAIT',zone:'Storico M5 insufficiente',context:'—',entry:null,invalid:null,tp1:null,tp2:null,reason:'Attendo almeno 35 candele M5 chiuse.'};
       return;
     }
-    const a5=atr(m5,14)||Math.max(state.mid*.0007,state.pipSize*30);
+    const a5=atr(m5,14)||Math.max(ref*.0007,state.pipSize*30);
     const spread=(state.bid&&state.ask)?Math.max(0,state.ask-state.bid):0;
     if(spread>0 && spread>a5*.18){
       const m15=trendContext('M15'), h1=trendContext('H1');
@@ -528,9 +568,9 @@
     const b2=m5.at(-1), b1=m5.at(-2), b0=m5.at(-3);
     const m15=trendContext('M15'), h1=trendContext('H1');
     const significant=state.levels.filter(x=>x.score>=4.4);
-    const nearR=significant.filter(x=>x.price>=state.mid-zone*1.3).sort((a,b)=>Math.abs(a.price-state.mid)-Math.abs(b.price-state.mid))[0]||null;
-    const nearS=significant.filter(x=>x.price<=state.mid+zone*1.3).sort((a,b)=>Math.abs(a.price-state.mid)-Math.abs(b.price-state.mid))[0]||null;
-    const distR=nearR?Math.abs(nearR.price-state.mid):Infinity, distS=nearS?Math.abs(nearS.price-state.mid):Infinity;
+    const nearR=significant.filter(x=>x.price>=ref-zone*1.3).sort((a,b)=>Math.abs(a.price-ref)-Math.abs(b.price-ref))[0]||null;
+    const nearS=significant.filter(x=>x.price<=ref+zone*1.3).sort((a,b)=>Math.abs(a.price-ref)-Math.abs(b.price-ref))[0]||null;
+    const distR=nearR?Math.abs(nearR.price-ref):Infinity, distS=nearS?Math.abs(nearS.price-ref):Infinity;
     let zoneText='NEUTRALE';
     if(distR<=zone*1.4 && distR<=distS) zoneText=`RES ${fmt(nearR.price)} · ${stars(nearR.score)}`;
     else if(distS<=zone*1.4) zoneText=`SUP ${fmt(nearS.price)} · ${stars(nearS.score)}`;
@@ -629,7 +669,7 @@
     if(r.includes('spazio insufficiente') || r.includes('tp1 offre')) return 'Setup valido, ma target troppo vicino.';
     if(r.includes('attendo retest')) return 'Breakout visto: manca il retest M5.';
     if(r.includes('manca una conferma m5') || r.includes('zona decisionale')) return 'Prezzo in zona: manca conferma M5.';
-    if(r.includes('lontano da una zona forte')) return 'Prezzo lontano dai livelli forti.';
+    if(r.includes('lontano da una zona forte')){ const z=nearestSupportResistance(); return z.support&&z.resistance?`Tra ${fmt(z.support.price)} e ${fmt(z.resistance.price)}: aspetta M5.`:'Aspetta la prossima chiusura M5.'; }
     if(r.includes('storico m5')) return 'Storico M5 ancora insufficiente.';
     if(r.includes('punteggio')) return 'Setup presente, confluenza ancora insufficiente.';
     if(s.side==='BUY') return 'Conferma BUY valida su M5.';
@@ -660,7 +700,7 @@
     $('scoreWhy').innerHTML=`<b>MOTIVO PUNTEGGIO</b><br>${escapeHtml(breakdownText(s))}`;
     $('signalName').textContent=s.name||s.side;
     $('signalName').className=`signalname ${cls}`;
-    $('signalBadge').textContent=`M5 · ${Math.round(s.score||0)}/100`;
+    $('signalBadge').textContent='M5 · STABILE';
     $('signalZone').textContent=s.zone||'—';
     $('signalContext').textContent=s.context||'—';
     $('signalEntry').textContent=Number.isFinite(s.entry)?fmt(s.entry):(s.side==='WAIT'?'Attendi conferma':'—');
@@ -688,25 +728,24 @@
     $('symbolName').textContent=state.symbolName||'—';
     $('currentPrice').textContent=fmt(state.mid);
     $('spreadText').textContent=(state.bid&&state.ask&&state.pipSize)?`Spread ${((state.ask-state.bid)/state.pipSize).toFixed(1)} pip`:'Spread —';
-    $('updatedText').textContent=`Aggiornamento ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+    $('updatedText').textContent=state.lastQuoteAt?`Quote ${new Date(state.lastQuoteAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`:(state.dataLoadedAt?'Solo storico':'Quote —');
     renderSignal();
+    renderMatrixAndLimits();
     if(!state.mid || !state.levels.length) return;
 
-    const resist=state.levels.filter(x=>x.price>state.mid).sort((a,b)=>a.price-b.price).slice(0,state.maxEachSide);
-    const support=state.levels.filter(x=>x.price<state.mid).sort((a,b)=>b.price-a.price).slice(0,state.maxEachSide);
+    const ref=state.analysisPrice||state.mid;
+    const resist=state.levels.filter(x=>x.price>ref).sort((a,b)=>a.price-b.price).slice(0,state.maxEachSide);
+    const support=state.levels.filter(x=>x.price<ref).sort((a,b)=>b.price-a.price).slice(0,state.maxEachSide);
     $('resistanceList').innerHTML=resist.length?resist.map(x=>renderLevel(x,'R')).join(''):'<div class="level">Nessuna resistenza significativa vicina.</div>';
     $('supportList').innerHTML=support.length?support.map(x=>renderLevel(x,'S')).join(''):'<div class="level">Nessun supporto significativo vicino.</div>';
     $('rCount').textContent=`${resist.length} mostrati`;$('sCount').textContent=`${support.length} mostrati`;
 
-    const key=state.keyLevels.sort((a,b)=>Math.abs(a.price-state.mid)-Math.abs(b.price-state.mid)).slice(0,8);
-    $('keyList').innerHTML=key.length?key.map(x=>renderLevel(x,'K')).join(''):'<div class="level">Livelli daily/weekly non disponibili.</div>';
+    const key=state.keyLevels.sort((a,b)=>Math.abs(a.price-ref)-Math.abs(b.price-ref)).slice(0,6);
+    $('keyList').innerHTML=key.length?key.map(x=>renderLevel(x,'K')).join(''):'<div class="level">Livelli H1 non disponibili.</div>';
 
-    const nearest=[...state.levels].sort((a,b)=>Math.abs(a.price-state.mid)-Math.abs(b.price-state.mid))[0];
-    const localRadius=Math.max((atr(closedBars('M15'),14)||0)*2.2,(atr(closedBars('H1'),14)||0)*.65,state.mid*.003);
-    const nearby=state.levels.filter(x=>Math.abs(x.price-state.mid)<=localRadius);
-    const strongest=[...(nearby.length?nearby:[nearest].filter(Boolean))].sort((a,b)=>b.score-a.score)[0];
-    $('nearestLevel').textContent=nearest?`${nearest.price>state.mid?'R':'S'} ${fmt(nearest.price)}`:'—';
-    $('strongestLevel').textContent=strongest?`${fmt(strongest.price)} ${stars(strongest.score)}`:'—';
+    const sr=nearestSupportResistance();
+    $('nearestLevel').textContent=sr.support?fmt(sr.support.price):'—';
+    $('strongestLevel').textContent=sr.resistance?fmt(sr.resistance.price):'—';
   }
 
   async function requestTrendbars(symbolId,cfg){
@@ -716,7 +755,7 @@
     const run=async(period)=>{
       const res=await firstValueFrom(getTrendbarList(state.adapter,{
         symbolId, period, fromTimestamp:from, toTimestamp:to, count:cfg.count, type:BAR_TYPE
-      }).pipe(take(1)));
+      }).pipe(take(1),timeout({first:9000})));
       const arr=repeatedField(res,['trendbar','trendbars']);
       const bars=toBars(res);
       const rp=arr.length ? Number(arr[0]?.period ?? 0) : 0;
@@ -745,7 +784,7 @@
   }
 
   async function resolveSymbol(name){
-    const list=await firstValueFrom(getLightSymbolList(state.adapter,{includeArchivedSymbols:false}).pipe(take(1)));
+    const list=await firstValueFrom(getLightSymbolList(state.adapter,{includeArchivedSymbols:false}).pipe(take(1),timeout({first:10000})));
     const symbols=repeatedField(list,['symbol','symbols']);
     if(!symbols.length) throw new Error(`Lista simboli vuota/non decodificata. SDK: ${shapeHint(list)}`);
     const target=normalizeName(name);
@@ -757,64 +796,224 @@
 
   async function loadSymbol(name){
     if(!state.connected) return;
+    const seq=++state.loadingSeq;
+    state.loading=true;
     try{
       setStatus('Caricamento…');
       $('notice').className='notice'; $('notice').textContent='Analisi multi-timeframe in corso…';
       const hit=await resolveSymbol(name);
+      if(seq!==state.loadingSeq) return;
       const newSymbolId=numValue(getField(hit,['id','symbolId']));
       if(!Number.isFinite(newSymbolId)) throw new Error(`ID simbolo non valido per ${getField(hit,['name'])||name}: ${String(getField(hit,['id','symbolId']))}`);
       const symbolChanged=state.symbolId!==newSymbolId;
       state.symbolName=getField(hit,['name'])||name; state.symbolId=newSymbolId;
-      if(symbolChanged){state.bid=null;state.ask=null;state.mid=null;state.levels=[];state.keyLevels=[];state.signal=null;}
-      const detail=await firstValueFrom(getSymbol(state.adapter,{symbolId:[state.symbolId]}).pipe(take(1)));
+      if(symbolChanged){state.bid=null;state.ask=null;state.mid=null;state.levels=[];state.keyLevels=[];state.signal=null;state.pending=[];state.barsByTf={};state.lastQuoteAt=0;state.dataLoadedAt=0;state.analysisPrice=null;render();}
+      const detail=await firstValueFrom(getSymbol(state.adapter,{symbolId:[state.symbolId]}).pipe(take(1),timeout({first:10000})));
+      if(seq!==state.loadingSeq) return;
       state.symbolInfo=repeatedField(detail,['symbol','symbols'])[0]||{};
       if(!Object.keys(state.symbolInfo).length) throw new Error(`Dettagli simbolo non decodificati. SDK: ${shapeHint(detail)}`);
       state.digits=Number(getField(state.symbolInfo,['digits']) ?? 2);
       const pipPos=Number(getField(state.symbolInfo,['pipPosition']) ?? Math.max(0,state.digits-1));
       state.pipSize=Math.pow(10,-pipPos);
+      const ts=numValue(getField(state.symbolInfo,['tickSize']));
+      const decimalPoint=Math.pow(10,-state.digits);
+      state.pointSize=(Number.isFinite(ts)&&ts>=decimalPoint && ts<decimalPoint*1000)?ts:decimalPoint;
 
-      // Carica lo storico in sequenza: più stabile nei WebView mobile e facile da diagnosticare.
+      // Prima la quotazione: un timeout sullo storico non deve impedire lo stream live.
+      if(!state.subscribedIds.has(state.symbolId)){
+        try{
+          await firstValueFrom(subscribeQuotes(state.adapter,{symbolId:[state.symbolId],subscribeToSpotTimestamp:true}).pipe(take(1),timeout({first:10000})));
+          state.subscribedIds.add(state.symbolId);
+        }catch(e){showDiag(`Quote non disponibili: ${e?.message||e}`);}
+      }
       const ok=[]; const failed=[];
       for(const cfg of TF){
         try{
           const bars=await requestTrendbars(state.symbolId,cfg);
-          if(bars.length) ok.push([cfg.label,bars]); else failed.push(`${cfg.label}: nessun dato`);
+          if(seq!==state.loadingSeq) return;
+          if(bars.length>=22) ok.push([cfg.label,bars]); else failed.push(`${cfg.label}: solo ${bars.length} barre`);
         }catch(e){ failed.push(`${cfg.label}: ${e?.message||e}`); }
+        state.barsByTf=Object.fromEntries(ok);
+        $('dataStatus').textContent=`Storico ${ok.length}/${TF.length} timeframe`;
+        renderMatrixAndLimits();
       }
       state.barsByTf=Object.fromEntries(ok);
       if(!ok.length) throw new Error(`Storico non disponibile (${failed.join(' | ')})`);
-      const last=state.barsByTf.M5?.at(-1)||state.barsByTf.M15?.at(-1)||state.barsByTf.H1?.at(-1)||state.barsByTf.D1?.at(-1)||ok[0]?.[1]?.at(-1);
+      const last=state.barsByTf.M5?.at(-1)||state.barsByTf.M15?.at(-1)||state.barsByTf.H1?.at(-1)||ok[0]?.[1]?.at(-1);
       if(last&&!state.mid) state.mid=last.c;
 
-      // Quote live del simbolo.
-      if(!state.subscribedIds.has(state.symbolId)){
-        await firstValueFrom(subscribeQuotes(state.adapter,{symbolId:[state.symbolId],subscribeToSpotTimestamp:true}).pipe(take(1)));
-        state.subscribedIds.add(state.symbolId);
-      }
-      setStatus('Live','ok');
+      state.dataLoadedAt=Date.now();
+      setStatus(state.lastQuoteAt?'Dati + quote':'Storico OK · quote assenti',state.lastQuoteAt?'ok':'');
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v2.0 · Livelli + segnali M5 calcolati da ${loadedTf}. v2.0: layout ultra-compatto; piano operativo ancorato al supporto/resistenza utile più vicino al prezzo.`;
+      $('notice').textContent=`v3.0 · Dati esclusivamente da cTrader. Segnali LIMIT indicativi; nessun ordine inviato.`;
       buildLevels();
+      $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
+      if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v2.0 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v3.0 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
-    }
+    }finally{if(seq===state.loadingSeq) state.loading=false;}
   }
 
   async function refreshSignalData(){
-    if(!state.connected || !state.symbolId || state.signalRefreshing) return;
+    if(!state.connected || !state.symbolId || state.signalRefreshing || state.loading) return;
     state.signalRefreshing=true;
     try{
-      for(const label of ['M5','M15','H1']){
-        const cfg=TF.find(x=>x.label===label); if(!cfg) continue;
-        try{ const bars=await requestTrendbars(state.symbolId,cfg); if(bars.length) state.barsByTf[label]=bars; }catch{}
+      for(const label of ['M1','M5']){
+        const cfg=TF.find(x=>x.label===label);
+        try{const b=await requestTrendbars(state.symbolId,cfg); if(b.length>=22) state.barsByTf[label]=b;}catch(e){console.warn(label,e);}
       }
-      computeSignal(); render();
-    }finally{ state.signalRefreshing=false; }
+      const last=closedBars('M5').at(-1);
+      if(last && last.t!==state.lastM5SignalTime){
+        for(const label of ['M15','M30','H1']){
+          const cfg=TF.find(x=>x.label===label);
+          try{const b=await requestTrendbars(state.symbolId,cfg); if(b.length>=22) state.barsByTf[label]=b;}catch(e){console.warn(label,e);}
+        }
+        buildLevels();
+      }else{
+        computeLimitSignals(); render();
+      }
+    }catch(e){showDiag(`Aggiornamento: ${e?.message||e}`);}
+    finally{ state.signalRefreshing=false; }
+  }
+
+  // LIMIT multi-timeframe: segnali, NON ordini. Tutti i prezzi vengono dalle barre e quote del broker.
+  function contextDirection(x){return x.strength>=.3?1:x.strength<=-.3?-1:0;}
+  function distanceM15(){
+    const b=closedBars('M15');const ctx=trendContext('M15');const last=b.at(-1);
+    if(!last || !Number.isFinite(ctx.ema9)||!state.pointSize) return null;
+    const live=state.lastQuoteAt && Date.now()-state.lastQuoteAt<=180000;
+    const current=live && Number.isFinite(state.mid)?state.mid:last.c;
+    const diff=(current-ctx.ema9)/state.pointSize;
+    return {signed:diff,abs:Math.abs(diff),ctx,bar:last,live};
+  }
+  function limitTargets(side,entry,stop,scale){
+    const risk=Math.abs(entry-stop);
+    const spread=state.ask-state.bid;
+    const minDist=Math.max(spread*2,state.pointSize*5);
+    const levels=state.levels.filter(l=>Number.isFinite(l.price)&&l.score>=3);
+    const pool=levels.filter(l=>side==='BUY'?l.price>entry+minDist:l.price<entry-minDist)
+      .sort((a,b)=>Math.abs(a.price-entry)-Math.abs(b.price-entry));
+    // Il primo livello contrario e' il TP1: non scavalcare ostacoli vicini
+    // per fabbricare un R:R favorevole.
+    const tp1=Number.isFinite(pool[0]?.price)?Number(pool[0].price.toFixed(state.digits)):null;
+    if(!Number.isFinite(tp1)) return null;
+    const rr=Math.abs(tp1-entry)/risk;
+    if(rr<1.35 || rr>8) return null;
+    const raw2=pool.find(l=>Math.abs(l.price-entry)>Math.abs(tp1-entry)+minDist)?.price ?? null;
+    const tp2=Number.isFinite(raw2)?Number(raw2.toFixed(state.digits)):null;
+    return {tp1,tp2,rr};
+  }
+  function computeLimitSignals(){
+    state.pending=[];
+    if(!state.bid||!state.ask||!state.levels.length || !state.lastQuoteAt) return;
+    if(Date.now()-state.lastQuoteAt>180000) return;
+    const m15=distanceM15();
+    if(!m15 || (state.filterM15 && (m15.abs<state.minM15Pts || m15.abs>state.maxM15Pts))) return;
+    const a5=atr(closedBars('M5'),14);
+    const spread=state.ask-state.bid;
+    if(!Number.isFinite(a5)||a5<=0||spread<=0||spread>a5*.18) return;
+    const m5bars=closedBars('M5');
+    if(m5bars.length<25) return;
+    const last5=m5bars.at(-1);
+    if(last5.h-last5.l>2.5*a5) return; // anti-spike
+    const contexts=Object.fromEntries(TF.map(t=>[t.label,trendContext(t.label)]));
+    const b5=contextDirection(contexts.M5), b15=contextDirection(contexts.M15), b30=contextDirection(contexts.M30), b1=contextDirection(contexts.H1);
+    const ref=(state.bid+state.ask)/2;
+    const candidates=[];
+    // Possono esserci setup indipendenti su diversi TF, ma H1 è contesto e non motore di scalping.
+    for(const label of ['M1','M5','M15','M30']){
+      const bars=closedBars(label); const c=contexts[label];
+      if(!bars||bars.length<35||!Number.isFinite(c.ema9)||!Number.isFinite(c.ema21)) continue;
+      const a=atr(bars,14); if(!a||!Number.isFinite(a)) continue;
+      const last=bars.at(-1);
+      if(last.h-last.l>2.8*a) continue;
+      const pivotSpan=label==='M1'?16:label==='M5'?12:label==='M15'?8:6;
+      const seg=bars.slice(-pivotSpan), low=Math.min(...seg.map(b=>b.l)), high=Math.max(...seg.map(b=>b.h));
+      const localPad=Math.max(a*.18,spread*2.5,state.pointSize*8);
+      const reach=Math.max(a*1.8,spread*7);
+      for(const side of ['BUY','SELL']){
+        const dir=side==='BUY'?1:-1;
+        const agreeing=[b5,b15,b30].filter(v=>v===dir).length;
+        // Allineamento M5/M15 e M30, H1 non deve opporsi nettamente.
+        if(agreeing<2 || (b15!==dir) || b1===-dir) continue;
+        if(label!=='M1' && contextDirection(c)!==dir) continue;
+        if(label==='M1' && contextDirection(c)===-dir) continue;
+        const p9=c.ema9,p21=c.ema21;
+        // Livello pivot valido, preferendo ritracciamento EMA9 supportato da supporto/resistenza.
+        const levels=state.levels.filter(l=>Number.isFinite(l.price) && l.score>=3.2 &&
+          (side==='BUY'?l.price<state.ask:l.price>state.bid) && Math.abs(l.price-ref)<reach*2.5)
+          .sort((a,b)=>Math.abs(a.price-p9)-Math.abs(b.price-p9));
+        let entry=null, level=null, basis='';
+        for(const l of levels.slice(0,8)){
+          // Non usare una resistenza isolata come acquisto, né un supporto isolato come vendita.
+          if(Math.abs(l.price-p9)>a*.85) continue;
+          const proposed=l.price;
+          if(side==='BUY' && proposed>=state.ask-Math.max(spread*1.5,state.pointSize*4)) continue;
+          if(side==='SELL' && proposed<=state.bid+Math.max(spread*1.5,state.pointSize*4)) continue;
+          if(Math.abs(proposed-ref)>reach) continue;
+          entry=proposed;level=l;basis='Livello + EMA9';break;
+        }
+        if(entry===null){
+          const proposed=p9;
+          if(side==='BUY' && proposed<state.ask-Math.max(spread*1.5,state.pointSize*4) && proposed>ref-reach){entry=proposed;basis='Pullback EMA9';}
+          if(side==='SELL'&& proposed>state.bid+Math.max(spread*1.5,state.pointSize*4) && proposed<ref+reach){entry=proposed;basis='Pullback EMA9';}
+        }
+        if(entry===null) continue;
+        entry=Number(entry.toFixed(state.digits));
+        if(!(side==='BUY'?entry<state.ask:entry>state.bid)) continue;
+        // Valida posizione entro la struttura recente, no stop 'fisso in euro'.
+        if(side==='BUY' && entry<low-a*.35) continue;
+        if(side==='SELL'&& entry>high+a*.35) continue;
+        const stop=Number((side==='BUY'? Math.min(low,entry-a*.65)-localPad : Math.max(high,entry+a*.65)+localPad).toFixed(state.digits));
+        const risk=Math.abs(entry-stop);
+        if(risk<spread*3 || risk>a*3.2) continue;
+        const target=limitTargets(side,entry,stop,label);
+        if(!target) continue;
+        const raw=Math.round(34+agreeing*10+(b1===dir?7:0)+(level?10:0)+(Math.abs(entry-p9)<=a*.3?8:3)+Math.min(8,Math.max(0,(target.rr-1.35)*5)));
+        const score=Math.min(95,raw);
+        if(score<state.minLimitScore) continue;
+        if(side==='BUY' && !(entry<state.ask && stop<entry && target.tp1>entry)) continue;
+        if(side==='SELL' && !(entry>state.bid && stop>entry && target.tp1<entry)) continue;
+        candidates.push({side,tf:label,entry,sl:stop,tp1:target.tp1,tp2:target.tp2,rr:target.rr,score,basis,
+          reason:`${basis} ${label}; M5/M15/M30 ${agreeing}/3 concordi, SL oltre struttura ${label}, TP su livello tecnico.`});
+      }
+    }
+    // Evita mostrare 4 segnali uguali a pochi punti tra loro.
+    candidates.sort((a,b)=>b.score-a.score || (b.rr-a.rr));
+    for(const c of candidates){
+      if(state.pending.length>=3) break;
+      if(state.pending.some(x=>x.side===c.side && Math.abs(x.entry-c.entry)<Math.max(a5*.35,spread*4))) continue;
+      state.pending.push(c);
+    }
+  }
+  function renderMatrixAndLimits(){
+    const contexts=TF.map(t=>({name:t.label,ctx:trendContext(t.label),has:closedBars(t.label).length>=30}));
+    $('trendMatrix').innerHTML=contexts.map(x=>{
+      const s=x.ctx.strength;
+      const dir=!x.has?'flat':s>.25?'up':s<-.25?'down':'flat';
+      return `<div class="tfCell ${dir}"><strong>${x.name}</strong><span class="arrow">${!x.has?'—':dir==='up'?'↗':dir==='down'?'↘':'→'}</span><small>${!x.has?'N/D':Math.abs(s)>.75?'FORTE':dir==='flat'?'FLAT':'DEBOLE'}</small></div>`;
+    }).join('');
+    const d=distanceM15();
+    if(!d){$('emaDistance').textContent='Dati M15 assenti';$('emaBandState').textContent='In attesa di EMA9';}
+    else {
+      const abs=Math.round(d.abs);
+      const ok=abs>=state.minM15Pts && abs<=state.maxM15Pts;
+      $('emaDistance').textContent=`${d.signed>=0?'+':'−'}${abs} punti ${d.signed>=0?'↑':'↓'}`;
+      $('emaDistance').style.color=ok?'var(--green)':'var(--amber)';
+      $('emaBandState').textContent=(d.live?'Prezzo live':'Chiusura M15')+' · '+(state.filterM15 ? (ok?'dentro range':'fuori range · LIMIT sospesi'):'filtro spento');
+    }
+    if(!state.lastQuoteAt){$('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Quote bid/ask assenti: non genero prezzi LIMIT.</div>';return;}
+    if(Date.now()-state.lastQuoteAt>180000){$('limitsCount').textContent='WAIT';$('limitCards').innerHTML='<div class="placeholder">Ultima quotazione troppo vecchia: attendere quote aggiornate.</div>';return;}
+    $('limitsCount').textContent=`${state.pending.length} setup`;
+    $('limitCards').innerHTML=state.pending.length?state.pending.map(p=>{
+      const side=p.side.toLowerCase();
+      return `<div class="limitCard ${side}"><div class="limitHead"><b>${p.side} LIMIT · ${p.tf}</b><em>Confluenza ${p.score}/100 · RR ${p.rr.toFixed(2)}</em></div><div class="limitNumbers"><div><small>ENTRY</small><strong>${fmt(p.entry)}</strong></div><div><small>SL</small><strong>${fmt(p.sl)}</strong></div><div><small>TP1</small><strong>${fmt(p.tp1)}</strong></div><div><small>TP2</small><strong>${Number.isFinite(p.tp2)?fmt(p.tp2):'—'}</strong></div></div><div class="limitReason">${escapeHtml(p.reason)}</div></div>`;
+    }).join(''):'<div class="placeholder">WAIT: non ci sono LIMIT con trend, struttura e spazio TP sufficienti.</div>';
   }
 
   async function connect(){
@@ -824,7 +1023,7 @@
       handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
       await firstValueFrom(registerEvent(state.adapter).pipe(take(1),catchError(err=>{throw err})));
       handleConfirmEvent(state.adapter,{}).pipe(take(1)).subscribe();
-      state.connected=true; setStatus('Connesso','ok'); showDiag('');
+      state.connected=true; setStatus('Host connesso · dati da caricare',''); showDiag('');
 
       quoteEvent(state.adapter).subscribe(ev=>{
         if(numValue(getField(ev,['symbolId']))!==state.symbolId) return;
@@ -832,10 +1031,21 @@
         {const v=getField(ev,['ask']); if(v!=null) state.ask=relPrice(v);}
         if(state.bid&&state.ask) state.mid=(state.bid+state.ask)/2;
         else state.mid=state.bid||state.ask||state.mid;
-        if(Date.now()-state.lastSignalCalcAt>2000){ state.lastSignalCalcAt=Date.now(); computeSignal(); }
-        render();
+        if(!Number.isFinite(state.mid)||state.mid<=0 || (state.bid&&state.ask&&state.bid>state.ask))return;
+        state.lastQuoteAt=Date.now();
+        if(!state.lastPendingCalcAt||Date.now()-state.lastPendingCalcAt>3000){
+          computeLimitSignals();renderMatrixAndLimits();state.lastPendingCalcAt=Date.now();
+        }
+        setStatus(state.dataLoadedAt?'Quote live + storico':'Quote live · storico in attesa','ok');
+        $('dataStatus').textContent=state.dataLoadedAt?'Quote live · dati disponibili':'Quote live · attendo storico';
+        $('symbolName').textContent=state.symbolName||'—';
+        $('currentPrice').textContent=fmt(state.mid);
+        $('spreadText').textContent=(state.bid&&state.ask&&state.pipSize)?`Spread ${((state.ask-state.bid)/state.pipSize).toFixed(1)} pip`:'Spread —';
+        $('updatedText').textContent=state.lastQuoteAt?`Quote ${new Date(state.lastQuoteAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`:(state.dataLoadedAt?'Solo storico':'Quote —');
+        $('m5Countdown').textContent=m5CountdownText();
       });
 
+      $('symbolPicker').classList.remove('hidden');
       if(initialSymbol) await loadSymbol(initialSymbol);
       else {
         $('symbolPicker').classList.remove('hidden');
@@ -843,22 +1053,34 @@
       }
 
       // Refresh completo ogni 10 minuti, quote live nel frattempo.
-      state.refreshTimer=setInterval(()=>{ if(state.symbolName) loadSymbol(state.symbolName); },600000);
+      state.refreshTimer=setInterval(()=>{ if(state.symbolName) loadSymbol(state.symbolName); },900000);
       state.signalRefreshTimer=setInterval(()=>{ refreshSignalData(); },60000);
+      setInterval(()=>{ if($('m5Countdown')) $('m5Countdown').textContent=m5CountdownText(); },1000);
+      setInterval(()=>{
+        if(state.lastQuoteAt && Date.now()-state.lastQuoteAt>180000){
+          setStatus('Quote non aggiornate','err');computeLimitSignals();renderMatrixAndLimits();
+        }
+      },30000);
     }catch(err){
       console.error(err);setStatus('Host non connesso','err');
-      showDiag(`v2.0 · Host: ${err?.message||err}`);
+      showDiag(`v3.0 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Apri questa pagina come plugin dentro cTrader. In un browser normale l’SDK non può collegarsi al tuo account.';
       $('symbolPicker').classList.remove('hidden');
     }
   }
 
+  function updateM15Controls(){
+    const min=Math.max(0,Number($('minM15').value)||0),max=Math.max(min+1,Number($('maxM15').value)||300);
+    state.minM15Pts=min;state.maxM15Pts=max;state.filterM15=$('useM15').checked;
+    computeLimitSignals();renderMatrixAndLimits();
+  }
+  for(const id of ['minM15','maxM15','useM15']) $(id).addEventListener('change',updateM15Controls);
   $('refreshBtn').addEventListener('click',()=>state.symbolName&&loadSymbol(state.symbolName));
-  $('moreBtn').addEventListener('click',()=>{state.maxEachSide=state.maxEachSide===5?10:5;$('moreBtn').textContent=state.maxEachSide===10?'Mostra meno livelli':'Mostra più livelli';render();});
+  $('moreBtn').addEventListener('click',()=>{state.maxEachSide=state.maxEachSide===2?5:2;$('moreBtn').textContent=state.maxEachSide===5?'Mostra meno livelli':'Mostra più livelli';render();});
   $('loadSymbolBtn').addEventListener('click',()=>{const v=$('symbolInput').value.trim();if(v)loadSymbol(v.toUpperCase())});
   $('symbolInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('loadSymbolBtn').click()});
-  $('detailsToggle').addEventListener('click',()=>{const d=$('signalDetails');const open=d.classList.contains('hidden');d.classList.toggle('hidden',!open);$('detailsToggle').textContent=open?'Nascondi dettagli ▲':'Mostra dettagli setup ▼';$('detailsToggle').setAttribute('aria-expanded',open?'true':'false');});
+  $('detailsToggle').addEventListener('click',()=>{const d=$('signalDetails');const open=d.classList.contains('hidden');d.classList.toggle('hidden',!open);$('detailsToggle').textContent=open?'Nascondi dettagli ▲':'Dettagli ▼';$('detailsToggle').setAttribute('aria-expanded',open?'true':'false');});
   document.addEventListener('click',async e=>{
     const b=e.target.closest?.('[data-copy]'); if(!b) return;
     const txt=b.getAttribute('data-copy')||'';
