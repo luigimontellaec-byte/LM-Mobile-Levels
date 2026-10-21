@@ -2107,6 +2107,7 @@
     }
     // Navigazione e nuova validazione broker. Un segnale letto sullo scanner NON diventa automaticamente un ordine.
     await loadSymbol(item.name);
+    if(state.symbolId!==item.id){$('scanStatus').textContent='Il simbolo non coincide: ordine bloccato';return;}
     const ix=state.pending.findIndex(p=>p.side===item.signal.side&&p.tf===item.signal.tf&&
       p.pivotTime===item.signal.pivotTime&&Math.abs(p.entry-item.signal.entry)<state.pointSize*1.1&&
       Math.abs(p.sl-item.signal.sl)<state.pointSize*1.1&&Math.abs(p.tp1-item.signal.tp1)<state.pointSize*1.1);
