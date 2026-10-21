@@ -141,7 +141,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.4</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v3.5</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -276,9 +276,9 @@
   // Mantieni le stesse importazioni di lettura della v3.0 funzionante.
   // Le nuove funzioni di trading sono recuperate opzionalmente dal namespace:
   // se assenti, non devono bloccare tutto il modulo prima della connessione.
-  import * as CTraderSdk from "https://esm.sh/@spotware-web-team/sdk@0.0.9";
-  // Versioni CDN fissate a quelle del tutorial cTrader ufficiale.
-  // Nelle release piu recenti l'export della conferma puo cambiare nome.
+  import * as CTraderSdk from "https://esm.sh/@spotware-web-team/sdk@0.0.20";
+  // v0.0.20: export dello storico usato nella v3.0; v0.0.9 non espone getTrendbarList.
+  // Compatibilita tra handleConfirmEvent (SDK vecchi) e confirmEvent (SDK nuovi).
   const {getLightSymbolList,getSymbol,getTrendbarList,
          quoteEvent,registerEvent,subscribeQuotes,ServerInterfaces} = CTraderSdk;
   const sendConfirm = typeof CTraderSdk.handleConfirmEvent === 'function'
@@ -290,12 +290,13 @@
       'registrazione':registerEvent,
       'lista simboli':getLightSymbolList,
       'dettagli simbolo':getSymbol,
-      'storico':getTrendbarList,
       'quotazioni':quoteEvent,
       'sottoscrizione':subscribeQuotes
     };
     const missing=Object.entries(needed).filter(([,fn])=>typeof fn!=='function').map(([name])=>name);
-    if(missing.length) throw new Error('SDK incompatibile. Funzioni assenti: '+missing.join(', ')+'.');
+    if(missing.length) throw new Error('SDK privo delle funzioni essenziali: '+missing.join(', ')+'.');
+    // L'assenza della funzione storico non deve mascherare lo stato della connessione host.
+    // Viene indicata separatamente dopo il collegamento; non calcoliamo segnali senza barre.
   }
   import { take, catchError, firstValueFrom, timeout } from "https://esm.sh/rxjs@7.8.2";
   import { createLogger } from "https://esm.sh/@veksa/logger@1.0.6";
@@ -884,6 +885,7 @@
   }
 
   async function requestTrendbars(symbolId,cfg){
+    if(typeof getTrendbarList!=='function') throw new Error('SDK 0.0.20: storico getTrendbarList non esportato; segnali disabilitati.');
     const to=Date.now();
     const from=Math.max(0, to - cfg.minutes*60000*cfg.count*2);
 
@@ -982,13 +984,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v3.4 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v3.5 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v3.4 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v3.5 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1204,6 +1206,7 @@
   function orderReady(p){
     if(!state.connected || state.orderBusy || !state.adapter || !Number.isFinite(state.symbolId)) return 'cTrader non pronto';
     if(typeof CTraderSdk.createNewOrder!=='function') return 'Trading SDK non disponibile';
+    if(typeof getTrendbarList!=='function' || !state.dataLoadedAt) return 'Storico non pronto: ordine bloccato';
     if(!p || !state.pending.some(x=>orderFingerprint(x)===orderFingerprint(p))) return 'Setup non piu\u0300 disponibile: aggiorna';
     if(Date.now()-state.lastQuoteAt>10000 || !(state.bid>0&&state.ask>state.bid)) return 'Quote non aggiornate';
     const minGap=Math.max(state.pointSize*4,(state.ask-state.bid)*1.5);
@@ -1311,10 +1314,12 @@
       await firstValueFrom(registerEvent(state.adapter).pipe(take(1),timeout({first:12000}),catchError(err=>{throw err})));
       sendConfirm(state.adapter,{}).pipe(take(1)).subscribe();
       state.connected=true;
+      if(typeof getTrendbarList!=='function') showDiag('SDK collegato ma funzione storico assente. Non vengono proposti segnali né ordini.');
       window.__lmBootPhase.hostConnected=true;
       window.__lmBootPhase.finished=true;
       $('startupRecovery').classList.add('hidden');
-      setStatus('Host connesso · dati da caricare',''); showDiag('');
+      setStatus('Host connesso · dati da caricare','');
+      if(typeof getTrendbarList==='function') showDiag('');
       if(typeof CTraderSdk.executionEvent==='function') CTraderSdk.executionEvent(state.adapter).subscribe(ev=>{
         const label=String(getField(getField(ev,['order'])||{},['tradeData'])?.label||'');
         if(label!=='LMLEVELS')return;
@@ -1361,10 +1366,10 @@
         }
       },30000);
     }catch(err){
-      console.error(err);setStatus(String(err?.message||'').includes('SDK incompatibile')?'SDK incompatibile':'Host non connesso','err');
+      console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v3.4 · Host: ${err?.message||err}`);
+      showDiag(`v3.5 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
