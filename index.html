@@ -139,7 +139,7 @@
 
 
     .waitWhy{font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
-    /* v4.4: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
+    /* v4.5: LIMIT, SL e TP1 sempre in evidenza, con ATR e R:R regolabili */
     #app{padding:5px 7px calc(12px + env(safe-area-inset-bottom))}
     .top{padding:3px 2px 5px}.hero{padding:7px 9px}.symbol{font-size:20px}.price{font-size:20px}
     .range{margin-top:5px}.mini{padding:5px 8px}.mini span{font-size:13px}
@@ -170,7 +170,7 @@
 <body>
 <div id="app">
   <div class="top">
-    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.4</span></div>
+    <div class="brand">LM MOBILE LEVELS <span style="font-size:10px;color:var(--muted);font-weight:700">v4.5</span></div>
     <div class="status"><span id="dot" class="dot"></span><span id="statusText">Connessione…</span></div>
   </div>
 
@@ -231,7 +231,7 @@
   <div id="limitCards" class="limitCards"><div class="placeholder">Attendo livelli, matrice e quotazioni…</div></div>
   <button id="limitsMoreToggle" class="limShowMore hidden" type="button" aria-expanded="false">Altri setup ▼</button>
   <div id="limitDiagnostics" class="limitDiag" aria-live="polite"><strong>DIAGNOSTICA LIMIT</strong><div class="diagLine">Attendo candele e prezzi live.</div></div>
-  <div class="limitNote">M1/M5: filtro EMA9 M15. M15/M30: pullback verso zone difese e TP1 al primo ostacolo strutturale. Solo LIMIT, SL e TP1; ordine dopo conferma.</div>
+  <div class="limitNote">LIMIT solo su strutture recenti, con controllo ATR/EMA21, SL e TP1. Scadenza automatica dell'ordine. <strong>Per cancellarlo quando cambia la struttura anche a plugin chiuso serve il cBot LM Pending Guard v4.5 attivo nel Cloud.</strong></div>
 
   <button id="levelsToggle" class="detailsbtn" type="button" aria-expanded="false">Mostra livelli ▼</button>
   <div id="levelsDetails" class="hidden">
@@ -266,7 +266,7 @@
   <div class="previewGrid" id="orderPreview"></div>
   <div class="tradeForm"><label for="orderLots">Lotto</label><input id="orderLots" type="number" step="0.01" min="0.01" max="100" value="0.01" inputmode="decimal" /></div>
   <p id="lotInfo">Volume, min/max e passo controllati con le specifiche del broker.</p>
-  <p>Ordine LIMIT con un solo take profit (TP1). La scadenza dipende dal timeframe.</p>
+  <p>Ordine LIMIT con TP1 e scadenza automatica. L'annullamento per cambio struttura richiede il cBot <b>LM Pending Guard v4.5</b> avviato separatamente in Cloud; il plugin da solo non monitora quando e' chiuso.</p>
   <div id="orderFeedback" role="status" aria-live="polite"></div>
   <div class="dialogActions"><button id="orderCancel" type="button">Annulla / Chiudi</button><button id="orderConfirm" type="button">CONFERMA E INVIA</button></div>
  </div>
@@ -1037,13 +1037,13 @@
       const loadedTf=Object.keys(state.barsByTf).join(', ');
       showDiag(failed.length ? `TF non caricati: ${failed.join(' | ')}` : '');
       $('notice').className='notice';
-      $('notice').textContent=`v4.4 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
+      $('notice').textContent=`v4.5 · Dati e segnali dal tuo cTrader. Ordini solo su conferma.`;
       buildLevels();
       $('dataStatus').textContent=`${ok.length}/${TF.length} timeframe · ${state.lastQuoteAt?'quote live':'attendo quote'}`;
     }catch(err){
       if(seq!==state.loadingSeq) return;
       console.error(err); setStatus('Errore','err');
-      const msg=`${err?.message||err}`; showDiag(`v4.4 · ${msg}`);
+      const msg=`${err?.message||err}`; showDiag(`v4.5 · ${msg}`);
       $('notice').className='notice error'; $('notice').textContent=`Errore: ${msg}`;
       $('symbolPicker').classList.remove('hidden');
     }finally{if(seq===state.loadingSeq) state.loading=false;}
@@ -1220,6 +1220,9 @@
       buy?b.l<=p+a*.22 && b.h>=p-a*.45:b.h>=p-a*.22 && b.l<=p+a*.45);
     if(!touching.length)return null;
     const lastTouch=touching.at(-1);
+    // Un livello difeso ore fa non e' necessariamente ancora un punto d'ingresso valido.
+    // Solo i test recenti dello stesso timeframe possono generare LIMIT.
+    if(recent.length-1-lastTouch.i > 12)return null;
     const after=recent.slice(lastTouch.i+1);
     if(after.some(b=>buy?b.c<p-a*.14:b.c>p+a*.14))return null;
     // Esclude l'inseguimento di un livello che non ha mai reagito.
@@ -1278,6 +1281,33 @@
     const minRisk=Math.max(spread*3,a*.14,state.pointSize*7);
     if(!Number.isFinite(risk)||risk<minRisk||risk>a*3.0) return null;
     return {sl,risk,method};
+  }
+  // v4.5 - un R:R buono NON basta: evita LIMIT troppo lontani, stop nel rumore
+  // e pullback che rompono il contesto tecnico prima ancora del possibile fill.
+  function limitQualityGate(side,label,entry,sl,live,a,ctx,dirs,spread){
+    if(!Number.isFinite(entry)||!Number.isFinite(sl)||!Number.isFinite(live)||!(a>0))
+      return 'Prezzi/ATR non validi';
+    const isScalp=label==='M1'||label==='M5';
+    const gap=Math.abs(live-entry);
+    const maxReach=a*(label==='M15'?1.15:label==='M30'?1.15:isScalp?1.45:1.15);
+    if(gap>maxReach) return `LIMIT lontano dal mercato (${(gap/a).toFixed(2)} ATR)`;
+    const risk=Math.abs(entry-sl);
+    if(risk<Math.max(spread*3.5,a*(isScalp?.24:.35)))
+      return `SL troppo stretto rispetto alla volatilità (${(risk/a).toFixed(2)} ATR)`;
+    if(risk>a*2.3) return 'Rischio eccessivo rispetto all’ATR';
+    const c=ctx[label];
+    if(!Number.isFinite(c?.ema21))return 'EMA21 non calcolabile';
+    // Per un LIMIT rialzista in trend, la zona non puo' trovarsi ben oltre
+    // la EMA21 (e viceversa sul SELL): ritracciamento diventato deterioramento.
+    const buffer=a*(isScalp?.46:.32);
+    if(side==='BUY' && entry<c.ema21-buffer)
+      return 'BUY LIMIT sotto EMA21 oltre tolleranza ATR';
+    if(side==='SELL' && entry>c.ema21+buffer)
+      return 'SELL LIMIT sopra EMA21 oltre tolleranza ATR';
+    const dir=side==='BUY'?1:-1;
+    if((label==='M15'||label==='M30')&&dirs.H1===-dir&&dirs.M15===-dir&&dirs.M30===-dir)
+      return 'Struttura M15/M30/H1 contraria';
+    return '';
   }
   function computeLimitSignals(){
     state.pending=[];
@@ -1427,11 +1457,20 @@
           const structure=structuralStop(side,bars,entry,proposal,a,spread);
           if(!structure){reject('SL strutturale non valido',label);continue;}
           const {sl,risk}=structure;
+          const qualityProblem=limitQualityGate(side,label,entry,sl,ref,a,ctx,dirs,spread);
+          if(qualityProblem){reject(qualityProblem,label);continue;}
           const targets=limitTargets(side,entry,sl,label,targetZones,proposal);
           if(!targets.ok){
             reject(targets.why==='R:R insufficiente'?'TP1/rapporto R:R insufficiente':targets.why,label);
             noteNearMiss(side,label,entry,sl,targets);
             continue;
+          }
+          // Il R:R del grafico non considera lo spread: filtro prudente per evitare
+          // setup che superano la soglia soltanto prima dei costi di esecuzione.
+          const grossReward=Math.abs(targets.tp1-entry);
+          const netRR=(grossReward-spread)/(risk+spread);
+          if(!Number.isFinite(netRR)||netRR<state.minRR){
+            reject('R:R netto spread insufficiente',label);continue;
           }
           // Un controtrend e' ammesso SOLO su pattern S/R provato con livello forte,
           // evitando che la stessa EMA si trasformi in un segnale inverso arbitrario.
@@ -1537,7 +1576,7 @@
   }
 
   // Trading SDK - mai inviare richieste senza una conferma umana.
-  const EXPIRY_MINUTES={M1:30,M5:90,M15:180,M30:240};
+  const EXPIRY_MINUTES={M1:20,M5:45,M15:75,M30:120};
   const orderFingerprint=p=>[state.symbolId,p.side,p.tf,p.entry,p.sl,p.tp1].join('|');
   function orderReady(p){
     if(!state.connected || state.orderBusy || !state.adapter || !Number.isFinite(state.symbolId)) return 'cTrader non pronto';
@@ -1604,7 +1643,7 @@
     }
     $('orderConfirm').disabled=false;
     $('orderCancel').disabled=false;
-    showOrderFeedback('Controlla conto demo/live, lotto, entry, SL e TP prima di inviare.');
+    showOrderFeedback('ATTENZIONE: senza cBot Guard attivo, solo la scadenza broker cancella automaticamente. Controlla conto, lotto, entry, SL e TP.');
     $('orderOverlay').classList.remove('hidden');
   }
   async function submitOrder(){
@@ -1628,7 +1667,7 @@
       const expiry=Date.now()+(EXPIRY_MINUTES[d.tf]||90)*60000;
       const req={symbolId:d.symbolId,orderType,tradeSide,volume,limitPrice:d.entry,
         stopLoss:d.sl,takeProfit:d.tp1,expirationTimestamp:expiry,
-        label:'LMLEVELS',comment:`LM Levels ${d.tf} score ${d.score}`};
+        label:`LM45_${d.tf}`,comment:`LM45|${d.tf}|${d.entry.toFixed(state.digits)}|${d.sl.toFixed(state.digits)}`};
       // Blocca duplicati anche in caso di timeout: una risposta tardiva puo\u0300 comunque creare un ordine.
       state.submittedKeys.add(d.key);
       if(typeof CTraderSdk.createNewOrder!=='function') throw Error('SDK trading non disponibile: invio disabilitato.');
@@ -1646,7 +1685,7 @@
         throw Error(`Nessuna conferma ORDER_ACCEPTED; risposta evento ${Number.isFinite(eventType)?eventType:'assente'}.`);
       const id=getField(getField(result,['order'])||{},['orderId']);
       const desc=eventType===filled?'ORDINE ESEGUITO':eventType===partial?'ORDINE PARZIALMENTE ESEGUITO':'ORDINE ACCETTATO';
-      showOrderFeedback(`${desc}${id?' · #'+id:''}. Controlla in ORDINI/POSIZIONI la presenza di SL/TP.`,false);
+      showOrderFeedback(`${desc}${id?' · #'+id:''}. Verifica SL/TP e che il cBot LM Pending Guard sia attivo se vuoi l'annullamento per cambio struttura.`,false);
       state.orderStatus=desc;
     }catch(e){
       // Sui timeout e sugli errori di rete non ritentare: l'ordine potrebbe essere gia\u0300 stato accettato.
@@ -1677,7 +1716,7 @@
       if(typeof getTrendbarList==='function') showDiag('');
       if(typeof CTraderSdk.executionEvent==='function') CTraderSdk.executionEvent(state.adapter).subscribe(ev=>{
         const label=String(getField(getField(ev,['order'])||{},['tradeData'])?.label||'');
-        if(label!=='LMLEVELS')return;
+        if(!/^LM45_(M1|M5|M15|M30)$/.test(label))return;
         const code=getField(ev,['errorCode']);
         const type=getField(ev,['executionType']);
         if(code){state.orderStatus='ORDINE RIFIUTATO: '+code;showOrderFeedback(state.orderStatus,true);}
@@ -1729,7 +1768,7 @@
       console.error(err);setStatus(String(err?.message||'').includes('SDK privo')?'SDK non disponibile':'Host non connesso','err');
       window.__lmBootPhase.finished=false;
       $('startupRecovery').classList.remove('hidden');
-      showDiag(`v4.4 · Host: ${err?.message||err}`);
+      showDiag(`v4.5 · Host: ${err?.message||err}`);
       $('notice').className='notice error';
       $('notice').textContent='Connessione non disponibile. Controlla il messaggio rosso in alto. Nessun ordine verra\u0300 inviato.';
       $('symbolPicker').classList.remove('hidden');
