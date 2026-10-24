@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>LM Trend Market - TOP 10 Real Trend</title>
+<style>
+:root{color-scheme:dark;--bg:#050a10;--panel:#0c1521;--line:#665026;--gold:#f1c86e;--muted:#91a0b4;--green:#00ce83;--red:#fc5366;--fg:#f3f7fd}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:14px}main{max-width:790px;margin:auto;padding:10px 10px 64px}.header{display:flex;gap:9px;align-items:center;padding:5px 2px 12px}.crest{width:46px;height:46px;border:2px solid var(--gold);border-radius:13px;display:grid;place-items:center;font-family:serif;font-weight:900;color:var(--gold);font-size:19px}.brand{flex:1}.brand strong{display:block;color:var(--gold);letter-spacing:.7px;font-size:14px}.brand em{display:block;color:var(--gold);font-family:Georgia,serif;font-size:13px}#status{font-size:10px;color:var(--muted);text-align:right;max-width:132px}.statusDot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:5px}.statusDot.ok{background:var(--green)}.panel{background:var(--panel);border:1px solid #283244;border-radius:14px;padding:11px;margin-bottom:11px;box-shadow:0 5px 18px #0005}.gold{border-color:var(--line)}h2{font-size:12px;letter-spacing:.8px;margin:2px 0 12px;color:var(--gold)}.bar{display:flex;gap:6px;align-items:center}.bar>*{flex:1}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.tab{background:#0c1623;color:var(--muted);border:1px solid #324157;border-radius:9px;padding:11px;font-weight:800}.tab.on{background:linear-gradient(#f9d887,#c3953d);color:#101010;border-color:var(--gold)}.metrics{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px;padding-bottom:9px}.metric b{color:var(--fg)}.market{border-top:1px solid #243245;padding:10px 1px}.marketTop{display:flex;gap:8px;align-items:center}.num{font-size:11px;color:var(--muted);width:17px}.name{font-size:15px;font-weight:850;flex:1}.score{font-size:19px;font-weight:950}.up{color:var(--green)}.down{color:var(--red)}.meta{display:flex;gap:8px;color:var(--muted);font-size:10px;margin:5px 0 9px 24px;flex-wrap:wrap}.controls{display:grid;grid-template-columns:1fr 1fr 1.1fr 1fr;gap:6px;margin-left:24px}label{color:var(--muted);font-size:9px;display:block}input,select{width:100%;margin-top:3px;border:1px solid #344459;background:#09111c;color:white;border-radius:7px;padding:8px 5px;font-weight:750;font-size:12px}.go{margin-top:14px;border:1px solid var(--gold);background:#382c16;color:var(--gold);font-size:10px;font-weight:800;border-radius:8px}.rowbuttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0 0 24px}.action{padding:9px;border:0;border-radius:8px;color:white;font-weight:900;font-size:12px}.action.buy{background:#00a96e}.action.sell{background:#cf364c}.btn{padding:9px;border-radius:8px;background:#1b2b3c;border:1px solid #3d536a;color:#eef5ff;font-weight:700}#scan{width:100%;background:linear-gradient(90deg,#e0ab4a,#f7d891);color:#19130c;border:0;border-radius:9px;padding:12px;font-weight:850}.small{color:var(--muted);font-size:11px;line-height:1.5}#notice{font-size:11px;color:var(--gold);padding:7px 0;min-height:24px}#ranking{min-height:140px}#details strong{color:var(--gold)}.danger{color:var(--red)}.anchor{display:inline-block;text-decoration:none;color:var(--gold)}.frame{background:#101d2b;border-radius:8px;border:1px solid #33465d;padding:8px 10px;margin:5px 0;font-size:11px}dialog{border:1px solid var(--gold);border-radius:13px;background:#0b1522;color:#f6f6f6;max-width:370px;width:calc(100% - 26px);padding:15px}dialog::backdrop{background:#000b}dialog h3{color:var(--gold);margin:0 0 10px}dialog .dialog-actions{display:flex;gap:8px;margin-top:16px}dialog button{flex:1}.foot{padding:8px 5px;font-size:10px;color:#7d8ba0} .graphHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.graphHead h2{margin-bottom:7px}.graphHead span{color:var(--muted);font-size:11px;font-weight:800}#trendChart{width:100%;height:auto;display:block;background:#080f18;border:1px solid #223344;border-radius:9px}.chartLegend{display:flex;justify-content:space-around;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:10px;padding-top:7px}.chartLegend span{white-space:nowrap} @media(min-width:650px){main{max-width:980px}.market{display:grid;grid-template-columns:1.1fr 1.3fr 140px;gap:9px;align-items:center}.marketTop{min-width:0}.meta{margin-left:0}.controls{margin-left:0}.rowbuttons{margin-left:0}.market .rowbuttons{align-self:center}}
+</style></head><body><main>
+<header class="header"><div class="crest">LM</div><div class="brand"><strong>LM TREND MARKET</strong><em>Luigi Montella · Mobile v6.1</em></div><div id="status"><span class="statusDot"></span>Collegamento…</div></header>
+<section class="panel gold"><h2>TOP 10 · FORZA REALE DEL TREND</h2><div class="tabs"><button type="button" id="buyTab" class="tab on">▲ TOP 10 BUY</button><button id="sellTab" type="button" class="tab">▼ TOP 10 SELL</button></div>
+<div class="metrics"><span class="metric">Fonte: <b>cTrader</b></span><span class="metric">Timeframe: <b>M5 / M15 / M30 / H1</b></span><span id="counter">0 mercati</span></div><div id="ranking">Collegamento dati cTrader…</div></section>
+<section class="panel gold" id="trendGraphSection"><div class="graphHead"><h2>GRAFICO TREND · M5</h2><span id="graphSymbol">Seleziona un simbolo</span></div><svg id="trendChart" viewBox="0 0 730 300" role="img" aria-label="Grafico candele ed EMA9 e EMA21 su dati broker" preserveAspectRatio="xMidYMid meet"><text x="20" y="155" fill="#91a0b4" font-size="15">In attesa delle barre del broker</text></svg><div class="chartLegend"><span style="color:#f6c85d">━ EMA 9</span><span style="color:#4bbaff">━ EMA 21</span><span>Candele M5 · storico cTrader</span></div></section>
+<section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="15" /></label><label>TRAIL<select id="globalTrail"><option>Stretto</option><option>Normale</option><option>Lungo</option><option>OFF</option></select></label></div><div class="small" style="padding-top:8px">Lotto, SL e trail preparano il piano manuale. Nessun ordine viene inviato dalla web app in questa versione.</div></section>
+<section class="panel"><h2>STATO E DETTAGLI</h2><div id="notice">Solo dati reali dal broker. Nessun punteggio inventato.</div><div id="details" class="small">Seleziona un asset per vedere la forza per timeframe.</div><button type="button" id="scan">↻ AGGIORNA CLASSIFICA</button><p class="small">Punteggio 0–100: ADX e DI (30%), slope EMA/ATR (25%), efficienza del prezzo (25%), distanza EMA9/EMA21 in ATR (20%). Il peso dei timeframe è 20/25/25/30. La classifica misura soltanto il trend e non è una probabilità di profitto.</p></section>
+<footer class="foot">Versione scanner: apertura ordini disabilitata fino alla verifica di SL e trailing. Richiede plugin cTrader WebView aperto per analizzare dati broker. Il punteggio NON è una probabilità di successo.</footer>
+</main>
+<dialog id="orderDialog"><h3 id="modalTitle">Piano ordine</h3><div id="modalText" class="small"></div><div class="dialog-actions"><button class="btn" id="cancelDialog" type="button">Chiudi</button><button class="btn" id="openMobile" type="button">Vai a cTrader</button></div></dialog>
+<script type="module">
+import {createClientAdapter} from 'https://esm.sh/@spotware-web-team/sdk-external-api@0.0.5';
+import * as SDK from 'https://esm.sh/@spotware-web-team/sdk@0.0.20';
+import {firstValueFrom,take,timeout} from 'https://esm.sh/rxjs@7.8.2';
+import {createLogger} from 'https://esm.sh/@veksa/logger@1.0.6';
+const $=s=>document.getElementById(s);const confirmHost=SDK.handleConfirmEvent||SDK.confirmEvent;
+const e=e=>String(e).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function n(v){try{return Number(v?.toString?.()??v)}catch{return NaN}}
+function field(o,keys){if(!o)return;for(const k of Object.keys(o))if(keys.some(x=>x.toLowerCase()===k.toLowerCase()))return o[k]}
+function array(v){if(Array.isArray(v))return v;if(v?.toArray)return v.toArray();if(v?.values)return Array.from(v.values());if(v&&typeof v==='object')return Object.keys(v).filter(k=>/^\d+$/.test(k)).sort((a,b)=>a-b).map(k=>v[k]);return []}
+function list(root,keys,level=0){if(!root||level>5||typeof root!=='object')return [];const direct=array(field(root,keys));if(direct.length)return direct;for(const child of Object.values(root)){if(child&&typeof child==='object'){const nested=list(child,keys,level+1);if(nested.length)return nested}}return []}
+const themes=[{name:'M5',period:5,legacy:5,minutes:5,weight:20},{name:'M15',period:11,legacy:7,minutes:15,weight:25},{name:'M30',period:13,legacy:8,minutes:30,weight:25},{name:'H1',period:15,legacy:9,minutes:60,weight:30}];
+const watch=['XAUUSD','US100','EURUSD','US500','USDJPY','GBPUSD','AUDUSD','NZDUSD','BTCUSD','XAGUSD','EURJPY','GBPJPY','CADJPY','USOIL','UKOIL','DE40','DAX40','NAS100','ETHUSD','EURGBP','USDCHF','AUDJPY','CHFJPY','EURAUD','NZDJPY','GBPCHF'];
+const app={adapter:null,connected:false,tab:'BUY',results:new Map(),symbols:[],busy:false,selected:null,lastScanAt:0};
+const setStatus=(txt,connected=false)=>{$('status').innerHTML='<span class="statusDot '+(connected?'ok':'')+'"></span>'+e(txt)};
+const clip=v=>Math.max(0,Math.min(1,v));
+// Formula identica al cBot v2.6; usare l'ultimo bar CHIUSO (storico API di norma è chiuso).
+function trendStrength(all){
+  const b=all.filter(x=>[x.o,x.h,x.l,x.c,x.t].every(Number.isFinite)).sort((a,z)=>a.t-z.t);
+  // Stop deliberatamente prima del bar corrente se esiste un bar in formazione.
+  if(b.length<110)return null;
+  const tfMinutes=this?.minutes||5;
+  if(b.length && Date.now()<b.at(-1).t+tfMinutes*60000)b.pop();
+  if(b.length<100)return null;
+  const latest=b.length-1,first=Math.max(0,latest-160);let fast=b[first].c,slow=fast;
+  const hist=[fast];for(let i=first+1;i<=latest;i++){fast+=(2/10)*(b[i].c-fast);slow+=(2/22)*(b[i].c-slow);hist.push(fast)}
+  const start=Math.max(first+1,latest-100),N=14;let tr=0,pdm=0,mdm=0,adx=0,warm=0,dxWarm=0;
+  for(let i=start;i<=latest;i++){
+    const prev=b[i-1],cur=b[i],up=cur.h-prev.h,dn=prev.l-cur.l;
+    const p=up>dn&&up>0?up:0,m=dn>up&&dn>0?dn:0;
+    const r=Math.max(cur.h-cur.l,Math.abs(cur.h-prev.c),Math.abs(cur.l-prev.c));
+    if(++warm<=N){tr+=r;pdm+=p;mdm+=m;if(warm===N){tr/=N;pdm/=N;mdm/=N}continue}
+    tr=(tr*13+r)/14;pdm=(pdm*13+p)/14;mdm=(mdm*13+m)/14;
+    const pos=tr>0?100*pdm/tr:0,neg=tr>0?100*mdm/tr:0;
+    const dx=pos+neg>0?100*Math.abs(pos-neg)/(pos+neg):0;
+    if(++dxWarm<=N){adx+=dx;if(dxWarm===N)adx/=N}else adx=(adx*13+dx)/14;
+  }
+  if(!(tr>0)||dxWarm<N)return null;
+  const pDi=100*pdm/tr,mDi=100*mdm/tr;
+  const slope=(fast-hist.at(-7))/(tr*6),sep=Math.abs(fast-slow)/tr;
+  let path=0;for(let i=latest-11;i<=latest;i++)path+=Math.abs(b[i].c-b[i-1].c);
+  const efficiency=path>0?Math.abs(b[latest].c-b[latest-12].c)/path:0;
+  const dir=adx>=14&&b[latest].c>fast&&fast>slow&&slope>0&&pDi>mDi*1.05?'BUY':
+    adx>=14&&b[latest].c<fast&&fast<slow&&slope<0&&mDi>pDi*1.05?'SELL':null;
+  if(!dir)return {side:null,strength:0,adx,efficiency};
+  const strength=Math.max(0,Math.min(100,Math.round(100*(.30*clip((adx-14)/28)+.25*clip((Math.abs(slope)-.035)/.22)+.25*clip((efficiency-.18)/.60)+.20*clip((sep-.12)/1.05)))));
+  return {side:dir,strength,adx,efficiency};
+}
+function barsFromProto(res){return list(res,['trendbar','trendbars']).map(x=>{const lo=n(field(x,['low']))||0;return{t:(n(field(x,['utcTimestampInMinutes']))||0)*60000,o:(lo+(n(field(x,['deltaOpen']))||0))/100000,h:(lo+(n(field(x,['deltaHigh']))||0))/100000,l:lo/100000,c:(lo+(n(field(x,['deltaClose']))||0))/100000}}).sort((a,b)=>a.t-b.t)}
+async function trendbars(id,tf){const to=Date.now(),from=to-tf.minutes*60000*370;let err;for(const period of [...new Set([tf.period,tf.legacy])]){try{const result=await firstValueFrom(SDK.getTrendbarList(app.adapter,{symbolId:id,period,fromTimestamp:from,toTimestamp:to,count:200,type:0}).pipe(take(1),timeout({first:9500})));const b=barsFromProto(result);if(b.length>100)return b}catch(ex){err=ex}}throw err||new Error('Dati storici insufficienti')}
+function matchSymbol(name){const exact=s=>String(field(s,['name'])||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const want=name.toUpperCase().replace(/[^A-Z0-9]/g,'');return app.symbols.find(s=>exact(s)===want)}
+async function scan(){if(!app.connected||app.busy)return;app.busy=true;$('scan').disabled=true;$('notice').textContent='Analizzo il broker con barre storiche chiuse…';const start=Date.now();let count=0;try{
+  for(const name of watch){const symbol=matchSymbol(name);if(!symbol)continue;const id=n(field(symbol,['id','symbolId']));if(!Number.isFinite(id))continue;
+    try{const details=[];let m5bars=[];for(const tf of themes){const bars=await trendbars(id,tf);if(tf.name==='M5')m5bars=bars;details.push({...trendStrength.call(tf,bars),tf:tf.name,weight:tf.weight})}
+      const buy=Math.min(100,details.reduce((a,x)=>a+(x.side==='BUY'?x.weight*x.strength/100:0),0));
+      const sell=Math.min(100,details.reduce((a,x)=>a+(x.side==='SELL'?x.weight*x.strength/100:0),0));
+      app.results.set(name,{name,id,details,m5bars, buy:Math.round(buy),sell:Math.round(sell),at:Date.now()});count++;
+    }catch(err){console.warn('Trend',name,err);app.results.delete(name)}
+    render();$('counter').textContent=count+' mercati';await new Promise(r=>setTimeout(r,170));
+  }
+  app.lastScanAt=Date.now();$('notice').textContent=count?`Scansione completata · ${count} asset · ${new Date().toLocaleTimeString('it-IT')}`:'Nessun mercato disponibile: controlla SDK e storico';
+}catch(err){$('notice').textContent='Scansione incompleta: '+String(err?.message||err)}finally{app.busy=false;$('scan').disabled=false;render()}}
+
+function drawTrendChart(row){
+  const svg=$('trendChart');if(!svg)return;
+  $('graphSymbol').textContent=row?.name||'Nessun simbolo';
+  const end=Date.now();
+  const bars=(row?.m5bars||[]).filter(c=>end>=c.t+5*60000).slice(-58);
+  if(bars.length<25){svg.innerHTML='<text x="20" y="155" fill="#91a0b4" font-size="14">Grafico disponibile dopo la scansione M5</text>';return}
+  let lo=Math.min(...bars.map(b=>b.l)),hi=Math.max(...bars.map(b=>b.h));
+  const pad=(hi-lo)*.12||1;lo-=pad;hi+=pad;
+  const y=v=>278-(v-lo)/(hi-lo)*252;
+  const x=i=>30+i*(650/(bars.length-1));
+  function emaPath(period){const alpha=2/(period+1);let v=bars[0].c;
+    return bars.map((b,i)=>{v+=alpha*(b.c-v);return `${i?'L':'M'}${x(i).toFixed(2)} ${y(v).toFixed(2)}`}).join(' ');
+  }
+  const grid=Array.from({length:5},(_,i)=>{const py=31+i*61;const price=hi-(py-26)/252*(hi-lo);return `<line x1="20" y1="${py}" x2="700" y2="${py}" stroke="#304254" stroke-opacity=".5" stroke-dasharray="3 5"/><text x="708" y="${py+3}" fill="#97a4b8" font-size="9">${price.toFixed(row?.name?.includes('JPY')?2:row?.name?.includes('EUR')?4:2)}</text>`}).join('');
+  const candles=bars.map((b,i)=>{const px=x(i),c=b.c>=b.o?'#00ce83':'#fc5366',w=7;return `<line x1="${px}" y1="${y(b.h)}" x2="${px}" y2="${y(b.l)}" stroke="${c}" stroke-width="1.6"/><rect x="${px-w/2}" y="${Math.min(y(b.o),y(b.c))}" width="${w}" height="${Math.max(1.5,Math.abs(y(b.o)-y(b.c)))}" fill="${c}"/>`}).join('');
+  svg.innerHTML=grid+candles+`<path d="${emaPath(9)}" stroke="#f6c85d" stroke-width="2" fill="none"/><path d="${emaPath(21)}" stroke="#4bbaff" stroke-width="2" fill="none"/><text x="28" y="19" fill="#f1c86e" font-weight="700" font-size="12">${e(row.name)} · TREND M5</text>`;
+}
+
+function render(){const side=app.tab;const list=[...app.results.values()].filter(r=>(side==='BUY'?r.buy:r.sell)>0).sort((a,b)=>(side==='BUY'?b.buy-a.buy:b.sell-a.sell)).slice(0,10);
+  $('buyTab').classList.toggle('on',side==='BUY');$('sellTab').classList.toggle('on',side==='SELL');
+  $('ranking').innerHTML=list.length?list.map((r,i)=>{const score=side==='BUY'?r.buy:r.sell;return `<article class="market"><div class="marketTop"><span class="num">${i+1}</span><span class="name">${e(r.name)}</span><span class="score ${side==='BUY'?'up':'down'}">${score}</span></div><div class="meta"><span>${side==='BUY'?'▲ BUY':'▼ SELL'}</span><span>ADX · pendenza · efficienza · ATR</span></div><div class="controls"><label>LOT<input class="tradeLot" data-symbol="${e(r.name)}" type="number" min="0.001" step="0.01" value="${e($('globalLot').value)}" /></label><label>SL €<input class="tradeSl" data-symbol="${e(r.name)}" type="number" min="0.5" step="0.5" value="${e($('globalSl').value)}" /></label><label>TRAIL<select class="tradeTrail" data-symbol="${e(r.name)}">${['Stretto','Normale','Lungo','OFF'].map(x=>`<option ${$('globalTrail').value===x?'selected':''}>${x}</option>`).join('')}</select></label><button class="go" data-details="${e(r.name)}">DETTAGLI</button></div><div class="rowbuttons"><button class="action buy" data-draft="${e(r.name)}" data-side="BUY">▲ BUY</button><button class="action sell" data-draft="${e(r.name)}" data-side="SELL">▼ SELL</button></div></article>`}).join(''):'<p class="small">Ancora nessun trend verificato su dati storici del broker per questa direzione.</p>';
+  if(!app.selected || !app.results.has(app.selected))app.selected=list.length?list[0].name:null;
+  drawTrendChart(app.results.get(app.selected));
+}
+let chosen=null;
+document.addEventListener('click',event=>{
+  const det=event.target.closest('[data-details]');if(det){const r=app.results.get(det.dataset.details);if(!r)return;app.selected=r.name;drawTrendChart(r);$('details').innerHTML=`<strong>${e(r.name)}</strong> · BUY ${r.buy}/100 · SELL ${r.sell}/100`+r.details.map(x=>`<div class="frame">${x.tf}: <b class="${x.side==='BUY'?'up':x.side==='SELL'?'down':''}">${x.side||'RANGE'}</b> · forza ${x.strength}/100 · ADX ${Number(x.adx||0).toFixed(1)} · efficienza ${Number(x.efficiency||0).toFixed(2)}</div>`).join('');return}
+  const b=event.target.closest('[data-draft]');if(!b)return;const r=app.results.get(b.dataset.draft);if(!r)return;
+  const article=b.closest('.market');const lot=Number(article.querySelector('.tradeLot').value),sl=Number(article.querySelector('.tradeSl').value),trail=article.querySelector('.tradeTrail').value;
+  if(!(lot>0)||!(sl>0)){$('notice').textContent='Lotto o SL non valido.';return}
+  chosen={name:r.name,side:b.dataset.side,lot,sl,trail};$('modalTitle').textContent=`${chosen.side} · ${chosen.name}`;
+  $('modalText').innerHTML=`<p><b>Lotto:</b> ${lot} · <b>SL desiderato:</b> ${sl} € · <b>Trail:</b> ${e(trail)}</p><p class="danger">Questa anteprima NON invia ordini: l'SDK broker non fornisce direttamente un valore pip già convertito nella valuta del conto per ogni CFD. I parametri NON sono precompilati in cTrader. Completa l'ordine nel ticket nativo, verificando il rischio.</p>`;
+  $('orderDialog').showModal();
+});
+$('buyTab').onclick=()=>{app.tab='BUY';render()};$('sellTab').onclick=()=>{app.tab='SELL';render()};$('cancelDialog').onclick=()=>$('orderDialog').close();$('scan').onclick=scan;
+$('openMobile').onclick=async()=>{if(!chosen)return;try{if(typeof SDK.openInternalUrl!=='function')throw Error('Deep link cTrader non disponibile');await firstValueFrom(SDK.openInternalUrl(app.adapter,{url:'/symbols/'+encodeURIComponent(chosen.name)+'/info'}).pipe(take(1),timeout({first:7000})));$('orderDialog').close()}catch(ex){$('modalText').textContent+=' · Navigazione non disponibile: apri manualmente il simbolo cTrader '+chosen.name}};
+async function connect(){try{if(typeof SDK.registerEvent!=='function'||typeof confirmHost!=='function'||typeof SDK.getLightSymbolList!=='function'||typeof SDK.getTrendbarList!=='function')throw Error('SDK cTrader incompleto');
+  app.adapter=createClientAdapter({logger:createLogger(false)});confirmHost(app.adapter,{}).pipe(take(1)).subscribe();
+  await firstValueFrom(SDK.registerEvent(app.adapter).pipe(take(1),timeout({first:12000})));app.connected=true;setStatus('cTrader collegato',true);
+  const res=await firstValueFrom(SDK.getLightSymbolList(app.adapter,{includeArchivedSymbols:false}).pipe(take(1),timeout({first:12000})));
+  app.symbols=list(res,['symbol','symbols']);if(!app.symbols.length)throw Error('Lista broker assente');
+  await scan();
+}catch(err){console.error(err);setStatus('Host non disponibile');$('notice').textContent='Apri la web app come plugin in cTrader Mobile: '+String(err?.message||err)}}
+connect();
+</script></body></html>
