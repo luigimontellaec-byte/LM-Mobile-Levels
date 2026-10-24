@@ -163,7 +163,7 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
       let extended=Boolean((same(details[1])&&details[1].extended)||(same(details[0])&&details[0].extended&&same(details[2])&&details[2].extended)||(same(details[2])&&details[2].extended&&same(details[3])&&details[3].extended));
       let weakening=Boolean((same(details[1])&&details[1].weakening)||(same(details[0])&&details[0].weakening&&same(details[2])&&details[2].weakening));
       let lateral=!rawSide||(details[2].side===null&&details[3].side===null)||
-        (details[1].strength<20&&details[2].strength<20);
+        (details[1].strength<20&&details[2].strength<20&&details[3].strength<20);
       let transition=Boolean(rawSide&&!lateral&&!confirmed);
       const scoreData=entryQualityScore(rawSide,details,m5bars,m15bars,extended,weakening,lateral,transition,confirmed,Math.max(rawBuy,rawSell));
       let entryQuality=scoreData.quality;
