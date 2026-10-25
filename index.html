@@ -157,9 +157,11 @@ function field(o,keys){if(!o)return;for(const k of Object.keys(o))if(keys.some(x
 function array(v){if(Array.isArray(v))return v;if(v?.toArray)return v.toArray();if(v?.values)return Array.from(v.values());if(v&&typeof v==='object')return Object.keys(v).filter(k=>/^\d+$/.test(k)).sort((a,b)=>a-b).map(k=>v[k]);return []}
 function list(root,keys,level=0){if(!root||level>5||typeof root!=='object')return [];const direct=array(field(root,keys));if(direct.length)return direct;for(const child of Object.values(root)){if(child&&typeof child==='object'){const nested=list(child,keys,level+1);if(nested.length)return nested}}return []}
 const themes=[{name:'M5',period:5,legacy:5,minutes:5,weight:10},{name:'M15',period:7,legacy:7,minutes:15,weight:20},{name:'M30',period:8,legacy:8,minutes:30,weight:30},{name:'H1',period:9,legacy:9,minutes:60,weight:40}];
-const watch=['XAUUSD','US100','EURUSD','US500','USDJPY','GBPUSD','AUDUSD','NZDUSD','XAGUSD','EURJPY','GBPJPY','CADJPY','USOIL','UKOIL','DE40','DAX40','NAS100','EURGBP','USDCHF','AUDJPY','CHFJPY','EURAUD','NZDJPY','GBPCHF'];
+const watch=['XAUUSD','US100','EURUSD','US500','USDJPY','GBPUSD','AUDUSD','NZDUSD','XAGUSD','EURJPY','GBPJPY','CADJPY','USOIL','UKOIL','DE40','DAX40','NAS100','EURGBP','USDCHF','AUDJPY','CHFJPY','EURAUD','NZDJPY','GBPCHF','BTCUSD','ETHUSD'];
 function isCryptoMarket(name){
  const n=String(name||'').trim().toUpperCase();
+ // BTCUSD / ETHUSD sono candidati espliciti da analizzare solo se disponibili nel broker.
+ if(/^(BTCUSD|ETHUSD)([._-][A-Z0-9]+)?$/.test(n))return false;
  if(/CRYPTO|BITCOIN|ETHEREUM/.test(n))return true;
  const m=n.match(/^(BTC|XBT|ETH|ETC|LTC|XRP|SOL|ADA|DOGE|SHIB|AVAX|DOT|LINK|BNB|BCH|TRX|ATOM|UNI|XLM|MATIC|POL|TON|NEAR|FIL|ICP|APT|ARB|OP|PEPE|SUI|USDT|USDC)(.*)$/);
  if(!m)return false;
