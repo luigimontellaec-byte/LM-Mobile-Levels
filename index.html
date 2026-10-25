@@ -230,7 +230,7 @@ function setTrailEngine(engine, persist=true){
 }
 // Auto refresh delle M5 solo a plugin aperto. Bid/Ask sono gia' in streaming.
 const AUTO_BAR_MS=300000, AUTO_LAG_MS=15000, AUTO_INTERVAL_MS=15000;
-let autoRequestedBucket=-1,autoLastRequestAt=0,autoScannerStarted=false;
+let autoRequestedBucket=-1,autoLastRequestAt=0,autoScannerStarted=false,autoLastUiAt=0;
 function reportAutoRefresh(){
  const el=$('autoScanInfo');if(!el)return;
  if(!app.connected){el.dataset.state='stale';el.textContent='AUTO M5 · broker non collegato';return;}
@@ -1119,7 +1119,7 @@ async function connect(){try{if(typeof SDK.registerEvent!=='function'||typeof co
     if(ask!=null && n(ask)>0){prev.ask=n(ask)/100000;prev.askTime=now}
     app.quotes.set(id,prev);
     updateSpreadBadges(id);
-    reportAutoRefresh();
+    if(now-autoLastUiAt>5000){autoLastUiAt=now;reportAutoRefresh()}
   });
   await firstValueFrom(SDK.registerEvent(app.adapter).pipe(take(1),timeout({first:12000})));app.connected=true;setStatus('cTrader collegato',true);
   const res=await firstValueFrom(SDK.getLightSymbolList(app.adapter,{includeArchivedSymbols:false}).pipe(take(1),timeout({first:12000})));
