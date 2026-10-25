@@ -342,6 +342,8 @@ function preTradeAdvice(row,side){
  if(phase==='LATERALE'||phase==='TRANSIZIONE')return {status:'ATTENDI · DIREZIONE INCERTA',tone:'avoid',body:phaseExplanation(phase,side)};
  if(q<35)return {status:'MEGLIO ASPETTARE',tone:'avoid',body:'La qualità dell’ingresso appare bassa. '+phaseExplanation(phase,side)};
  if(phase==='ESTESO'||phase==='PERDE FORZA')return {status:'PRUDENZA',tone:'warn',body:phaseExplanation(phase,side)};
+ if(phase==='PULLBACK')return {status:'ATTENDI LA RIPARTENZA',tone:'warn',body:phaseExplanation(phase,side)};
+ if(phase==='ACCELERAZIONE')return {status:'NON INSEGUIRE IL PREZZO',tone:'warn',body:phaseExplanation(phase,side)};
  if(q<60)return {status:'ATTENDI CONFERMA',tone:'warn',body:phaseExplanation(phase,side)};
  return {status:'VALUTA CON DISCIPLINA',tone:'normal',body:phaseExplanation(phase,side)};
 }
