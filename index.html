@@ -431,6 +431,7 @@ function render(){
  if(!app.selected || !app.results.has(app.selected))app.selected=list.length?list[0].r.name:null;
  drawTrendChart(app.results.get(app.selected));
  refreshSpreadBadges();
+ if(!app.busy)void subscribeRankSpreads();
 }
 // Spread informativo da Bid e Ask del broker: NON BLOCCA ordini e NON cambia trailing.
 function spreadAssessment(name,q){
@@ -470,7 +471,9 @@ function refreshSpreadBadges(){
 async function subscribeRankSpreads(){
  if(!app.connected||typeof SDK.subscribeQuotes!=='function')return;
  const ids=[...app.results.values()].filter(r=>!isCryptoMarket(r.name))
- .map(r=>({r,score:Math.max(Number(r.buy)||0,Number(r.sell)||0)}))
+ .map(r=>{const buy=Number(r.buy)||0,sell=Number(r.sell)||0;
+    return {r,side:buy-sell>=8?'BUY':sell-buy>=8?'SELL':null,score:Math.max(buy,sell)};})
+ .filter(x=>x.side && x.score>=Math.max(1,Number(app.minScore)||0))
  .sort((a,b)=>b.score-a.score).slice(0,10).map(x=>Number(x.r.id))
  .filter(id=>Number.isFinite(id)&&!app.subscriptions.has(id)&&!app.spreadPending.has(id));
  if(!ids.length)return;
