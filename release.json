@@ -1,5 +1,5 @@
 {
-  "version": "9.9",
-  "build": 99,
-  "description": "Auto-verifica della versione e ricaricamento anti-cache"
+  "version": "10.0",
+  "build": 100,
+  "description": "Quotazioni trading e cambio EUR: diagnostica separata e sottoscrizione preventiva EURUSD"
 }
