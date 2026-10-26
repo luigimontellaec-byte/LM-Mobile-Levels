@@ -1,5 +1,5 @@
 {
-  "version": "10.0",
-  "build": 100,
-  "description": "Quotazioni trading e cambio EUR: diagnostica separata e sottoscrizione preventiva EURUSD"
+  "version": "10.1",
+  "build": 101,
+  "description": "Conversione SL in EUR da Bid live per coppie dirette e Ask live per inverse, senza blocco da altro lato mancante"
 }
