@@ -1,5 +1,5 @@
 {
-  "version": "10.3",
-  "build": 103,
-  "description": "Riconoscimento SL broker da eventi di posizione annidati e correlazione con ordine mobile; SL richiesto non e' SL confermato"
+  "version": "10.4",
+  "build": 104,
+  "description": "Correzione feed Bid/Ask e gestione hasGap senza scartare i prezzi, diagnostica lato mancante per simbolo"
 }
