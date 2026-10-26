@@ -230,7 +230,7 @@ function startMobileReleaseCheck(){
 const app={adapter:null,connected:false,results:new Map(),symbols:[],busy:false,selected:null,lastScanAt:0,tradeBusy:false,draftBusy:false,quotes:new Map(),subscriptions:new Set(),spreadPending:new Set(),quoteRecovery:new Map(),quoteMeta:new Map(),accountCurrency:null,accountInfoLoaded:false,orderIds:new Set(),orderReceipts:new Map(),minScore:0,rankingView:"trends",visibleSignalsSignature:"",scanFailures:0,matchedSymbols:0};
 // In cTrader Cloud HTTP/WebSocket cBot non sono disponibili: non inventare lo stato.
 const TRAIL_ENGINE_KEY='lmtrendmarkets:mobile:trailEngine:v1';
-let trailEngine='native', cbotoManualConfirmed=false;
+let trailEngine='native', cbotoManualConfirmed=false,quotePartialAck=false;
 function readSavedTrailEngine(){
  try{
   const saved=localStorage.getItem(TRAIL_ENGINE_KEY);
@@ -1455,10 +1455,11 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{}){
  progress('1/3 · Caricamento contratto, valuta conto e prezzi LIVE di '+name+'…');
  // Le tre letture sono indipendenti. In sequenza i timeout dell'host
  // potevano sommarsi lasciando il popup in attesa troppo a lungo.
- const [info,cur,q]=await Promise.all([
+ const [info,cur,execution]=await Promise.all([
    symbolDetails(row.id), accountCurrency(),
-   ensureQuote(row.id).catch(err=>{throw Error('PREZZO '+name+': '+String(err?.message||err));})
+   ensureExecutionQuote(row.id,side).catch(err=>{throw Error('PREZZO '+name+': '+String(err?.message||err));})
  ]);
+ const q=execution.q;
  const actualId=n(field(info,['symbolId']));
  if(Number.isFinite(actualId)&&actualId!==Number(row.id))
    throw Error('Specifiche broker di un altro simbolo.');
@@ -1473,9 +1474,10 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{}){
    throw Error('CAMBIO per SL € di '+name+': '+String(err?.message||err));
  });
  progress('3/3 · Verifica volume, Stop Loss, spread e protezioni…');
- const spreadInfo=spreadAssessment(name,q);
- if(spreadInfo.grade==='NON DISPONIBILE')
-   throw Error('Prezzi '+name+' non più aggiornati. Riapri il ticket quando Bid/Ask sono LIVE.');
+ const spreadInfo=execution.partial?
+  {grade:'NON VERIFICATO',text:'SPREAD NON VERIFICATO · '+execution.reason}:
+  spreadAssessment(name,q);
+ if(!validSide(q,side))throw Error('Prezzo LIVE '+side+' non disponibile.');
  const entry=side==='BUY'?q.ask:q.bid;
  const native=nativeTrailProfile(trail);
  const budget=slEuro*(trailEngine==='cbot'?1:native.fraction);
@@ -1484,7 +1486,8 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{}){
  return {name,side,lot,slEuro,trail,tag,symbolId:row.id,volume,
    relativeUnits:calc.relativeUnits,priceDist:calc.priceDist,slPrice:calc.slPrice,entry,digits:calc.digits,
    units:calc.units,tick:calc.tick,accountCurrency:cur,fxRate:conversion,quoteCurrency:quote.currency,contractQuoteSource:quote.source,
-   spreadInfo:spreadInfo.text,created:Date.now(),label:'LM_TMW_'+tag,
+   spreadInfo:spreadInfo.text,quotePartial:execution.partial===true,
+   quoteMissingReason:execution.reason||'',created:Date.now(),label:'LM_TMW_'+tag,
    engine:trailEngine,nativeTrailing:trailEngine==='native'&&native.enabled,
    profileText:trailEngine==='cbot'?'cBot '+trail+' (SL fisso iniziale)':native.label,effectiveRiskEuro:calc.effectiveRiskEuro};
 }
@@ -1584,12 +1587,18 @@ async function submitMarketOrder(){
   if(!row||Number(row.id)!==Number(chosen.symbolId))throw Error('Simbolo cambiato: aggiorna la classifica.');
   if(chosen.signalGate)assertConfirmedM5(row,chosen.signalGate);
   checkRecentTradingHistory(row);
-  const q=await ensureQuote(chosen.symbolId);
+  const execution=await ensureExecutionQuote(chosen.symbolId,chosen.side);
+  const q=execution.q;
+  if(execution.partial&&!chosen.quotePartial)
+   throw Error('Lo spread ha perso un lato: riapri il ticket per valutarne il rischio.');
+  if(execution.partial&&!quotePartialAck)
+   throw Error('Devi confermare manualmente che accetti lo spread non verificato.');
   const conversion=await eurToQuote(chosen.quoteCurrency);
   const risk=chosen.units*chosen.priceDist/conversion;
   if(!(risk>0&&risk<=chosen.slEuro*1.01))
    throw Error('Rischio stimato superiore allo SL MAX €, ricontrolla il cambio e riapri il ticket.');
-  const spread=spreadAssessment(chosen.name,q);
+  const spread=execution.partial?{grade:'NON VERIFICATO'}:spreadAssessment(chosen.name,q);
+  if(!validSide(q,chosen.side))throw Error('Il prezzo LIVE non e\' più aggiornato.');
   if(Math.abs((chosen.side==='BUY'?q.ask:q.bid)-chosen.entry)>Math.max(chosen.priceDist*.25,0.0002))
    throw Error('Prezzo variato: riapri il ticket.');
   if(chosen.signalGate)assertConfirmedM5(app.results.get(chosen.name),chosen.signalGate);
