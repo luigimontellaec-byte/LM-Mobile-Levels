@@ -1020,6 +1020,9 @@ function spreadAssessment(name,q){
  // verde se non possiamo piu' usarne Bid/Ask per un ordine.
  const fresh=validatedQuote(q);
  if(!fresh)return {grade:'NON DISPONIBILE',text:'SPREAD: QUOTE NON RECENTI'};
+ if(!validSide(fresh,'bid',VERIFIED_SPREAD_SIDE_AGE_MS)||
+    !validSide(fresh,'ask',VERIFIED_SPREAD_SIDE_AGE_MS))
+  return {grade:'NON DISPONIBILE',text:'SPREAD: LATO PREZZO NON VERIFICATO'};
  const v=fresh.ask-fresh.bid,nm=String(name||'').toUpperCase();
  let good,medium,unit='punti',factor=1;
  if(/XAU|GOLD/.test(nm)){good=0.50;medium=1.20;unit='USD';}
@@ -1091,6 +1094,8 @@ let chosen=null;
 const QUOTE_SIDE_MAX_AGE_MS=120000;
 const QUOTE_EVENT_MAX_AGE_MS=25000;
 const EXECUTION_SIDE_MAX_AGE_MS=20000;
+const VERIFIED_SPREAD_SIDE_AGE_MS=45000;
+const FX_SIDE_MAX_AGE_MS=45000;
 // cTrader può inviare una sola parte del book per evento: per BUY serve
 // un ASK recente, per SELL un BID recente. La sicurezza sullo spread
 // resta distinta e richiede entrambi i prezzi.
@@ -1120,7 +1125,7 @@ function validatedConversionSide(q,side,now=Date.now()){
  const rate=Number(q?.[side]),stamp=Number(q?.[side+'Time']);
  const age=now-stamp;
  if(!(rate>0&&Number.isFinite(rate)&&Number.isFinite(age)&&age>=0&&
-      age<=QUOTE_SIDE_MAX_AGE_MS))return null;
+      age<=FX_SIDE_MAX_AGE_MS))return null;
  return rate;
 }
 const recentConversionSide=(id,side)=>validatedConversionSide(app.quotes.get(Number(id)),side);
@@ -1223,7 +1228,9 @@ async function ensureQuote(symbolId){
 async function ensureExecutionQuote(symbolId,side){
  const id=Number(symbolId);
  const complete=recentQuote(id);
- if(complete&&validSide(complete,side))return {q:complete,partial:false};
+ const opposite=side==='BUY'?'bid':'ask';
+ if(complete&&validSide(complete,side)&&validSide(complete,opposite,VERIFIED_SPREAD_SIDE_AGE_MS))
+  return {q:complete,partial:false};
  const snapshot=app.quotes.get(id);
  if(validSide(snapshot,side))return {q:snapshot,partial:true,reason:quoteDiagnostics(id,'both')};
  try{await restartQuoteSubscription(id,'both')}catch(err){
@@ -1232,7 +1239,8 @@ async function ensureExecutionQuote(symbolId,side){
   throw err;
  }
  const q=app.quotes.get(id),full=recentQuote(id);
- if(full&&validSide(full,side))return {q:full,partial:false};
+ if(full&&validSide(full,side)&&validSide(full,opposite,VERIFIED_SPREAD_SIDE_AGE_MS))
+  return {q:full,partial:false};
  if(validSide(q,side))return {q,partial:true,reason:quoteDiagnostics(id,'both')};
  throw Error('Nessun prezzo '+(side==='BUY'?'ASK':'BID')+' LIVE per il simbolo: ordine non inviato.');
 }
