@@ -289,9 +289,18 @@ function normalizeTradeDirection(v){
 }
 function positionsFromBrokerEvent(ev){
  const nodes=brokerEventNodes(ev),positions=[],orders=[];
+ const unique=new Set();
  for(const node of nodes){
-  if(field(node,['positionId'])!=null && field(node,['stopLoss'])!=null)
-   positions.push(node);
+  // SOLO il campo esplicito 'position' del messaggio broker puo' provare SL.
+  // Un ordine puo' avere positionId e stopLoss pur NON essendo una
+  // posizione aperta: non va usato come prova di protezione.
+  const candidate=field(node,['position']);
+  const ps=Array.isArray(candidate)?candidate:[candidate];
+  for(const pos of ps){
+   if(!pos||typeof pos!=='object'||unique.has(pos))continue;
+   if(field(pos,['positionId'])==null||field(pos,['stopLoss'])==null)continue;
+   unique.add(pos);positions.push(pos);
+  }
   if(field(node,['orderId'])!=null || field(node,['clientOrderId'])!=null)
    orders.push(node);
  }
@@ -336,7 +345,6 @@ function checkTrailCloud(){
 }
 function observeTrailingPositionEvent(ev){
  const {nodes,positions,orders}=positionsFromBrokerEvent(ev);
- if(!positions.length)return false; // ordine accettato non equivale a posizione protetta
  let eventLabel=null,eventClient=null,eventBrokerOrder=null,eventTrade=null;
  for(const order of orders){
   const trade=field(order,['tradeData']);
@@ -355,6 +363,9 @@ function observeTrailingPositionEvent(ev){
  }
  if(eventClient&&eventBrokerOrder&&trailEvidence.orderRequests.has(eventClient))
   trailEvidence.orderByBrokerId.set(eventBrokerOrder,eventClient);
+ // Anche la risposta ORDER_ACCEPTED senza posizione e' utile per associare
+ // il futuro ORDER_FILLED all'ordine originario. NON e' una conferma SL.
+ if(!positions.length)return false;
  let matched=0;
  for(const pos of positions){
   const trade=field(pos,['tradeData'])||eventTrade;
@@ -1533,6 +1544,10 @@ async function submitMarketOrder(){
   const asyncStatus=app.orderReceipts.get(clientOrderId);
   const outcome=asyncStatus?.status==='FILLED'?asyncStatus:
     direct.status!=='UNKNOWN'?direct:(asyncStatus||direct);
+  if(outcome.status==='REJECTED'&&trailEvidence.lastRequested?.clientId===clientOrderId){
+   trailEvidence.lastRequested=null;
+   checkTrailCloud();
+  }
   const prefix='Richiesta '+chosen.side+' '+chosen.name+' · ID '+clientOrderId+'. ';
   const protection='Verifica subito nella scheda Posizioni SL reale e trailing. ';
   if(outcome.status==='FILLED'){
