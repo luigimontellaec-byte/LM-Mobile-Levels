@@ -1,5 +1,5 @@
 {
-  "version": "10.2",
-  "build": 102,
-  "description": "SL reale verificato sull'evento posizione all'apertura; distingue SL broker presente da trailing avanzato e stato Cloud"
+  "version": "10.3",
+  "build": 103,
+  "description": "Riconoscimento SL broker da eventi di posizione annidati e correlazione con ordine mobile; SL richiesto non e' SL confermato"
 }
