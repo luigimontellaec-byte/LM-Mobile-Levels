@@ -1076,16 +1076,28 @@ let chosen=null;
 // cTrader SpotEvent puo' contenere solo BID oppure solo ASK.
 // Conserviamo gli ultimi due lati, accettandoli esclusivamente se entrambi
 // abbastanza recenti e se e' arrivato un evento live recente.
-const QUOTE_SIDE_MAX_AGE_MS=45000;
+const QUOTE_SIDE_MAX_AGE_MS=120000;
 const QUOTE_EVENT_MAX_AGE_MS=25000;
+const EXECUTION_SIDE_MAX_AGE_MS=20000;
+// cTrader può inviare una sola parte del book per evento: per BUY serve
+// un ASK recente, per SELL un BID recente. La sicurezza sullo spread
+// resta distinta e richiede entrambi i prezzi.
+function validSide(q,side,ageLimit=EXECUTION_SIDE_MAX_AGE_MS,now=Date.now()){
+ const k=side==='BUY'?'ask':side==='SELL'?'bid':side;
+ if(k!=='bid'&&k!=='ask')return false;
+ const price=Number(q?.[k]),timestamp=Number(q?.[k+'Time']);
+ const event=Number(q?.lastEventAt);
+ return price>0&&Number.isFinite(price)&&timestamp>0&&
+  now>=timestamp&&now-timestamp<=ageLimit&&event>0&&
+  now>=event&&now-event<=QUOTE_EVENT_MAX_AGE_MS;
+}
 function validatedQuote(q,now=Date.now()){
  if(!q||!(q.bid>0)||!(q.ask>q.bid))return null;
- const bidAge=now-Number(q.bidTime),askAge=now-Number(q.askTime);
- const eventAge=now-Number(q.lastEventAt||Math.max(q.bidTime||0,q.askTime||0));
- if(!Number.isFinite(bidAge)||!Number.isFinite(askAge)||!Number.isFinite(eventAge)||
-    bidAge<0||askAge<0||eventAge<0||
-    bidAge>QUOTE_SIDE_MAX_AGE_MS||askAge>QUOTE_SIDE_MAX_AGE_MS||
-    eventAge>QUOTE_EVENT_MAX_AGE_MS)return null;
+ const bAge=now-Number(q.bidTime),aAge=now-Number(q.askTime);
+ if(!Number.isFinite(bAge)||!Number.isFinite(aAge)||bAge<0||aAge<0||
+    bAge>QUOTE_SIDE_MAX_AGE_MS||aAge>QUOTE_SIDE_MAX_AGE_MS||
+    !(validSide(q,'bid',EXECUTION_SIDE_MAX_AGE_MS,now)||
+      validSide(q,'ask',EXECUTION_SIDE_MAX_AGE_MS,now)))return null;
  return q;
 }
 const recentQuote=id=>validatedQuote(app.quotes.get(Number(id)));
@@ -1195,6 +1207,22 @@ async function ensureQuote(symbolId){
  const id=Number(symbolId),current=recentQuote(id);
  if(current)return current;
  return restartQuoteSubscription(id,'both');
+}
+async function ensureExecutionQuote(symbolId,side){
+ const id=Number(symbolId);
+ const complete=recentQuote(id);
+ if(complete&&validSide(complete,side))return {q:complete,partial:false};
+ const snapshot=app.quotes.get(id);
+ if(validSide(snapshot,side))return {q:snapshot,partial:true,reason:quoteDiagnostics(id,'both')};
+ try{await restartQuoteSubscription(id,'both')}catch(err){
+  const q=app.quotes.get(id);
+  if(validSide(q,side))return {q,partial:true,reason:quoteDiagnostics(id,'both')};
+  throw err;
+ }
+ const q=app.quotes.get(id),full=recentQuote(id);
+ if(full&&validSide(full,side))return {q:full,partial:false};
+ if(validSide(q,side))return {q,partial:true,reason:quoteDiagnostics(id,'both')};
+ throw Error('Nessun prezzo '+(side==='BUY'?'ASK':'BID')+' LIVE per il simbolo: ordine non inviato.');
 }
 async function ensureFxSide(symbolId,side){
  const id=Number(symbolId),current=recentConversionSide(id,side);
