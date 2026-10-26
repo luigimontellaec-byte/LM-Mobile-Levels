@@ -1,5 +1,5 @@
 {
-  "version": "10.4",
-  "build": 104,
-  "description": "Correzione feed Bid/Ask e gestione hasGap senza scartare i prezzi, diagnostica lato mancante per simbolo"
+  "version": "10.5",
+  "build": 105,
+  "description": "Flusso prezzi Bid/Ask separati, quote parziali con conferma manuale esplicita dello spread e SL reale invariato"
 }
