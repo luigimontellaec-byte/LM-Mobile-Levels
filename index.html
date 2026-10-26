@@ -1827,7 +1827,10 @@ document.addEventListener('click',async event=>{
    $('orderConfirm').disabled=true;
   }
  }finally{
-   if(requestId===draftPreparationToken)app.draftBusy=false;
+   if(requestId===draftPreparationToken){
+    app.draftBusy=false;
+    if(chosen&&$('orderDialog').open)updateOrderConfirmGate();
+   }
  }
 });
 const filterToggle=$('minScoreToggle'),filterMenu=$('minScoreMenu');
