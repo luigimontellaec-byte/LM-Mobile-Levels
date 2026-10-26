@@ -1,0 +1,5 @@
+{
+  "version": "9.9",
+  "build": 99,
+  "description": "Auto-verifica della versione e ricaricamento anti-cache"
+}
