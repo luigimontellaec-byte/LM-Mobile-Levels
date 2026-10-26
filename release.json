@@ -1,5 +1,5 @@
 {
-  "version": "10.1",
-  "build": 101,
-  "description": "Conversione SL in EUR da Bid live per coppie dirette e Ask live per inverse, senza blocco da altro lato mancante"
+  "version": "10.2",
+  "build": 102,
+  "description": "SL reale verificato sull'evento posizione all'apertura; distingue SL broker presente da trailing avanzato e stato Cloud"
 }
