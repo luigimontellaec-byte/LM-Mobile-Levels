@@ -1,5 +1,5 @@
 {
-  "version": "10.5",
-  "build": 105,
-  "description": "Flusso prezzi Bid/Ask separati, quote parziali con conferma manuale esplicita dello spread e SL reale invariato"
+  "version": "10.6",
+  "build": 106,
+  "description": "Market Context PRO: analisi H4/D1 della posizione del prezzo e ostacoli, separata da trend e conferma M5"
 }
