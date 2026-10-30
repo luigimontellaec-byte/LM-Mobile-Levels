@@ -154,7 +154,7 @@
 <section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="Stretto"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
 <div class="small" style="padding-top:8px">Per il cBot locale o Cloud l’ordine partirà con SL reale e trailing nativo OFF; il cBot dev’essere già avviato sullo stesso conto.</div></section>
 <section class="panel"><h2>STATO E DETTAGLI</h2><div id="notice">Solo dati reali dal broker. Nessun punteggio inventato.</div><div id="details" class="small">Seleziona un mercato e premi GRAFICO per vedere il prezzo.</div><button type="button" id="scan">↻ AGGIORNA CLASSIFICA</button></section>
-<footer class="foot">Versione 10.8 CRT STRICT H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
+<footer class="foot">Versione 10.9 DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
 </main>
 <dialog id="trailDialog" aria-labelledby="trailModalHeading">
  <h3 id="trailModalHeading">Scegli il trailing</h3>
@@ -201,7 +201,7 @@ function isCryptoMarket(name){
 // Pubblicazione GitHub Pages con URL stabile (?v=81): il manifest separato
 // viene richiesto senza cache. Un reload interno aggiunge un token variabile,
  // ma non cambia l'indirizzo che l'utente ha salvato.
-const MOBILE_BUILD=108,MOBILE_VERSION='10.8 CRT STRICT';
+const MOBILE_BUILD=109,MOBILE_VERSION='10.9 DUAL CRT + TREND';
 let latestPublishedBuild=MOBILE_BUILD,versionCheckBusy=false;
 function mobileReleaseUI(message,outdated=false){
  const bar=document.getElementById('mobileReleaseBar');
@@ -719,7 +719,7 @@ function stableScore(previous,target){
 }
 async function scan(){if(!app.connected||app.busy)return;for(const name of app.results.keys())if(isCryptoMarket(name))app.results.delete(name);app.busy=true;$('scan').disabled=true;$('notice').textContent='Analizzo il broker con barre storiche chiuse…';const start=Date.now();let count=0,matched=0,failed=0,firstError='';try{
   for(const name of watch){if(isCryptoMarket(name))continue;const symbol=matchSymbol(name);if(!symbol||isCryptoMarket(symbol.name||symbol.symbolName||name))continue;const id=n(field(symbol,['id','symbolId']));if(!Number.isFinite(id))continue;matched++;
-    try{const details=[];let m5bars=[],m15bars=[];const closeTimes={};for(const tf of themes){const bars=await trendbars(id,tf);closeTimes[tf.name]=bars.at(-1)?.t||0;if(tf.name==='M5')m5bars=bars;if(tf.name==='M15')m15bars=bars;details.push({...trendStrength.call(tf,bars),tf:tf.name,weight:tf.weight})}
+    try{const details=[];let m5bars=[],m15bars=[],h1bars=[];const closeTimes={};for(const tf of themes){const bars=await trendbars(id,tf);closeTimes[tf.name]=bars.at(-1)?.t||0;if(tf.name==='M5')m5bars=bars;if(tf.name==='M15')m15bars=bars;if(tf.name==='H1')h1bars=bars;details.push({...trendStrength.call(tf,bars),tf:tf.name,weight:tf.weight})}
       const rawBuy=Math.round(Math.min(100,details.reduce((a,x)=>a+(x.side==='BUY'?x.weight*x.strength/100:0),0)));
       const rawSell=Math.round(Math.min(100,details.reduce((a,x)=>a+(x.side==='SELL'?x.weight*x.strength/100:0),0)));
       const rawSide=rawBuy-rawSell>=8?'BUY':rawSell-rawBuy>=8?'SELL':null;
@@ -736,9 +736,9 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
       const m5ClosedAt=m5bars.filter(b=>Date.now()>=b.t+300000).at(-1)?.t||0;
        const m5Volume=calculateM5Volume(m5bars);
       const context=await marketContextForSymbol(id,rawSide,m5bars);
-      let crtH4=null,crt={ready:false,stage:-1,status:'DATI H4 NON DISPONIBILI'};
-      try{crtH4=await crtLastClosedH4(id);crt=evaluateCRT(crtH4,m5bars);}
-      catch(crtErr){console.warn('CRT H4',name,crtErr)}
+      let crtH4=null,crt={ready:false,stage:-1,status:'DATI H4 NON DISPONIBILI'},crtError='';
+      try{crtH4=await crtLastClosedH4(id,h1bars);crt=evaluateCRT(crtH4,m5bars);}
+      catch(crtErr){crtError=String(crtErr?.message||crtErr);console.warn('CRT H4',name,crtError)}
       const prior=app.results.get(name);
       let buy=rawBuy,sell=rawSell;
       if(prior&&m5ClosedAt&&prior.m5ClosedAt===m5ClosedAt){
@@ -755,7 +755,7 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
        const setup=evaluateEntrySetupM5(rawSide,details,m5bars,m5Volume,
          {lateral,transition,extended,weakening});
        entryQuality=setup.score;
-      app.results.set(name,{name,id,details,m5bars,buy,sell,extended,weakening,confirmed,entryQuality,phase,lateral,transition,m5ClosedAt,m5Volume,setup,context,crtH4,crt,closeTimes,at:Date.now()});count++;
+      app.results.set(name,{name,id,details,m5bars,buy,sell,extended,weakening,confirmed,entryQuality,phase,lateral,transition,m5ClosedAt,m5Volume,setup,context,crtH4,crt,crtError,closeTimes,at:Date.now()});count++;
     }catch(err){console.warn('Trend',name,err);failed++;if(!firstError)firstError=name+': '+String(err?.message||err); /* conserva i risultati precedenti, se presenti */}
     render();$('counter').textContent=count+' mercati';await new Promise(r=>setTimeout(r,170));
   }
@@ -1014,27 +1014,67 @@ function visibleSignalSignature(){
 
 /* Motore CRT. La H4 di riferimento e' sempre CHIUSA; nessun dato fittizio. */
 const CRT_H4_MS=240*60000,CRT_M5_MS=5*60000,CRT_H4_CACHE=new Map();
+const CRT_NEAR_LIMIT=.20;
 const CRT_PREF_KEY='lmtrendmarkets:crtConfirmBars:v1';
 let crtConfirmBars=2;
 try{const old=Number(localStorage.getItem(CRT_PREF_KEY));if(Number.isInteger(old)&&old>=2&&old<=6)crtConfirmBars=old;}catch{}
 const crtSelect=document.getElementById('crtConfirmCount');
 if(crtSelect)crtSelect.value=String(crtConfirmBars);
-async function crtLastClosedH4(id){
- const now=Date.now(),bucket=Math.floor((now-90000)/CRT_H4_MS),cached=CRT_H4_CACHE.get(id);
- if(cached&&cached.bucket===bucket)return cached.h4;
- const known=HTF_CONTEXT_CACHE.get(id+':10');
- let bars=known&&known.bucket===bucket?known.bars:null;
- if(!bars?.length){
-  const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
-   symbolId:id,period:10,fromTimestamp:now-18*86400000,toTimestamp:now,count:40,type:0
-  }).pipe(take(1),timeout({first:9500})));
-  bars=barsFromProto(res).filter(b=>b.t>0&&now>=b.t+CRT_H4_MS);
+/* H4 ufficiale: priorità al dato nativo del broker; fallback SOLO con 4 H1 chiuse e consecutive.
+   H4 UTC se ricostruita: l'ora del broker potrebbe avere un allineamento diverso. */
+function reconstructH4FromH1(source,now=Date.now()){
+ const usable=(source||[]).filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
+  b.t+3600000<=now).sort((a,b)=>a.t-b.t);
+ const groups=new Map();
+ for(const b of usable){
+  const start=Math.floor(b.t/CRT_H4_MS)*CRT_H4_MS;
+  if(!groups.has(start))groups.set(start,[]);
+  groups.get(start).push(b);
  }
- const h4=bars?.at(-1);
- if(!h4||!Number.isFinite(h4.h)||!Number.isFinite(h4.l)||!(h4.h>h4.l))
-  throw Error('Ultima H4 chiusa non disponibile');
- CRT_H4_CACHE.set(id,{bucket,h4});
- return h4;
+ const keys=[...groups.keys()].filter(t=>t+CRT_H4_MS<=now).sort((a,b)=>b-a);
+ for(const t of keys){
+  const four=groups.get(t);
+  if(four.length!==4||!four.every((b,i)=>b.t===t+i*3600000))continue;
+  return {t,o:four[0].o,h:Math.max(...four.map(b=>b.h)),
+   l:Math.min(...four.map(b=>b.l)),c:four[3].c,source:'4 H1 consecutive · UTC'};
+ }
+ return null;
+}
+async function crtLastClosedH4(id,h1source=[]){
+ const now=Date.now(),bucket=Math.floor((now-90000)/CRT_H4_MS),cached=CRT_H4_CACHE.get(id);
+ if(cached&&cached.bucket===bucket&&cached.h4)return cached.h4;
+ let native=null,lastError='',attempts=0;
+ const known=HTF_CONTEXT_CACHE.get(id+':10');
+ if(known?.bars?.length){
+  const b=known.bars.filter(x=>x&&x.t+CRT_H4_MS<=now).at(-1);
+  if(b&&b.h>b.l&&b.t>0)native={...b,source:'H4 broker (cache)'};
+ }
+ if(!native){
+  for(const days of [7,21,2]){
+   attempts++;
+   try{
+    const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
+     symbolId:id,period:10,fromTimestamp:now-days*86400000,toTimestamp:now,
+     count:days===21?125:55,type:0
+    }).pipe(take(1),timeout({first:9000})));
+    const listH4=barsFromProto(res).filter(b=>b&&b.t>0&&b.t+CRT_H4_MS<=now&&b.h>b.l);
+    const latest=listH4.at(-1);
+    if(latest){native={...latest,source:'H4 broker'};break;}
+    lastError='H4: risposta senza candele chiuse ('+days+' giorni)';
+   }catch(err){lastError='H4 '+days+' giorni: '+String(err?.message||err);console.warn('CRT H4 API',id,lastError);}
+  }
+ }
+ if(native){
+  CRT_H4_CACHE.set(id,{bucket,h4:native});
+  return native;
+ }
+ const reconstruct=reconstructH4FromH1(h1source,now);
+ if(reconstruct){
+  CRT_H4_CACHE.set(id,{bucket,h4:reconstruct});
+  return reconstruct;
+ }
+ throw Error('H4 non disponibile: '+lastError+'; fallback 4 H1 consecutive non trovato ('+
+  h1source.length+' H1). Tentativi: '+attempts);
 }
 function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  const invalid={ready:false,status:'H4/M5 NON DISPONIBILI',stage:-1,side:null,progress:0,distance:Infinity,price:null};
@@ -1043,7 +1083,8 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  const closed=source.filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
   b.t>=h4.t+CRT_H4_MS&&b.t+CRT_M5_MS<=now).sort((a,b)=>a.t-b.t);
  const latest=closed.at(-1),price=latest?.c;
- if(!latest||!(price>0))return {...invalid,h4,low,high,range,status:'ATTESA PRIMA M5 DOPO H4'};
+ if(!latest||!(price>0))return {ready:true,h4,low,high,range,price:null,side:null,stage:0,
+  distance:Infinity,progress:0,status:'H4 OK · ATTESA PRIME M5',at:now};
  const live=now-(latest.t+CRT_M5_MS)<=12*60000&&now>=latest.t+CRT_M5_MS;
  const nearHigh=Math.abs(price-high),nearLow=Math.abs(price-low);
  let side=null,progress=0,breakoutAt=0,complete=null,lastInsideAt=0;
@@ -1110,7 +1151,7 @@ function crtRankInfo(row){
 function crtPanelHTML(row){
  const c=crtRankInfo(row);
  if(!row.crtH4||!row.crt?.ready)
-  return '<div class="crtPanel" data-stage="-1"><div class="crtHead">CRT · DATI NON DISPONIBILI</div><div class="crtNote">Non genero livelli se lo storico H4 del broker manca.</div></div>';
+  return '<div class="crtPanel" data-stage="-1"><div class="crtHead">CRT · H4 NON DISPONIBILE</div><div class="crtNote">'+e(row.crtError||'H4 assente; nessun livello inventato.')+'</div></div>';
  const h=row.crtH4;
  const distance=Number.isFinite(c.distance)?(100*c.distance).toFixed(1)+'% del range':'N/D';
  const lvl=c.side==='SELL'?c.high:c.low;
@@ -1125,7 +1166,8 @@ function crtPanelHTML(row){
  return '<div class="crtPanel" data-stage="'+c.stage+'"><div class="crtHead">CRT · '+e(status)+
   ' · '+e(c.side||'NEUTRO')+'</div><div class="crtLevels"><span>H4 MAX '+e(fmtStructurePrice(row.name,h.h))+
   '</span><span>H4 MIN '+e(fmtStructurePrice(row.name,h.l))+'</span></div>'+
-  '<div class="crtStatus">Distanza livello '+distance+' · riferimento '+e(time)+
+  '<div class="crtStatus">Distanza livello '+distance+' · H4 chiusa '+e(time)+
+  ' · fonte '+e(h.source||'H4 broker')+
   (Number.isFinite(lvl)?' · livello osservato '+e(fmtStructurePrice(row.name,lvl)):'')+
   '</div><div class="crtStatus">'+e(warn)+'</div><div class="crtNote">'+e(sideText)+
   '. Livelli sul grafico INTERNO della MobileApp, non sul grafico nativo cTrader. '+
