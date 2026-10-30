@@ -1,5 +1,5 @@
 {
-  "version": "10.6",
-  "build": 106,
-  "description": "Market Context PRO: analisi H4/D1 della posizione del prezzo e ostacoli, separata da trend e conferma M5"
+  "version": "10.7",
+  "build": 107,
+  "description": "Scanner CRT ultima H4 chiusa, 2-6 corpi M5 nel range, classifica per fase/vicinanza, linee su grafico interno; trailing e trading manuale invariati"
 }
