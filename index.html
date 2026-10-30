@@ -1208,6 +1208,7 @@ function crtPanelHTML(row){
  const lvl=c.side==='SELL'?c.high:c.low;
  const sideText=c.side==='SELL'?'SELL se rientra sotto il massimo':'BUY se rientra sopra il minimo';
  const time=Number.isFinite(h.t)?new Date(h.t+CRT_H4_MS).toLocaleString('it-IT'):'N/D';
+ const opened=Number.isFinite(h.t)?new Date(h.t).toLocaleString('it-IT'):'N/D';
  const status=String(c.status||'ATTENDI');
  const warn=c.stage===4?crtConfirmBars+' corpi M5 rientrati: sulla candela M5 successiva valutare ingresso MANUALE, previo controllo prezzo e rischio.':
   c.stage===3?'Mancano '+Math.max(0,crtConfirmBars-c.progress)+' candele M5 consecutive con corpo interno.':
@@ -1217,7 +1218,7 @@ function crtPanelHTML(row){
  return '<div class="crtPanel" data-stage="'+c.stage+'"><div class="crtHead">CRT · '+e(status)+
   ' · '+e(c.side||'NEUTRO')+'</div><div class="crtLevels"><span>H4 MAX '+e(fmtStructurePrice(row.name,h.h))+
   '</span><span>H4 MIN '+e(fmtStructurePrice(row.name,h.l))+'</span></div>'+
-  '<div class="crtStatus">Distanza livello '+distance+' · H4 chiusa '+e(time)+
+  '<div class="crtStatus">Distanza livello '+distance+' · H4 aperta '+e(opened)+' · chiusa '+e(time)+
   ' · fonte '+e(h.source||'H4 broker')+
   (Number.isFinite(lvl)?' · livello osservato '+e(fmtStructurePrice(row.name,lvl)):'')+
   '</div><div class="crtStatus">'+e(warn)+'</div><div class="crtNote">'+e(sideText)+
