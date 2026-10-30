@@ -1046,22 +1046,24 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  if(!latest||!(price>0))return {...invalid,h4,low,high,range,status:'ATTESA PRIMA M5 DOPO H4'};
  const live=now-(latest.t+CRT_M5_MS)<=12*60000&&now>=latest.t+CRT_M5_MS;
  const nearHigh=Math.abs(price-high),nearLow=Math.abs(price-low);
- let side=null,progress=0,breakoutAt=0,complete=null;
+ let side=null,progress=0,breakoutAt=0,complete=null,lastInsideAt=0;
  for(const b of closed){
   const crossHigh=b.h>high,crossLow=b.l<low;
   const inside=b.o>=low&&b.o<=high&&b.c>=low&&b.c<=high;
-  if(crossHigh&&crossLow){side=null;progress=0;breakoutAt=0;continue;}
+  if(crossHigh&&crossLow){side=null;progress=0;breakoutAt=0;lastInsideAt=0;continue;}
   const freshBreak=!side&&(crossHigh||crossLow);
   const reverseBreak=(side==='SELL'&&crossLow)||(side==='BUY'&&crossHigh);
   if(freshBreak||reverseBreak){
-   side=crossHigh?'SELL':'BUY';progress=0;breakoutAt=b.t+CRT_M5_MS;continue;
+   side=crossHigh?'SELL':'BUY';progress=0;lastInsideAt=0;breakoutAt=b.t+CRT_M5_MS;continue;
   }
   if(side){
-   if(inside)progress++;
-   else progress=0; /* due corpi consecutivi obbligatori */
+   if(inside){
+    progress=lastInsideAt&&b.t-lastInsideAt===CRT_M5_MS?progress+1:1;
+    lastInsideAt=b.t;
+   }else{progress=0;lastInsideAt=0;} /* M5 chiuse e cronologicamente consecutive */
    if(progress>=required){
     complete={side,at:b.t+CRT_M5_MS,breakoutAt};
-    side=null;progress=0;breakoutAt=0;
+    side=null;progress=0;lastInsideAt=0;breakoutAt=0;
    }
   }
  }
@@ -1085,6 +1087,7 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  return {ready:true,h4,high,low,range,price,side:proximitySide,stage,distance,progress:0,
   status:stage===1?'VICINO AL LIVELLO H4':'LONTANO DAL LIVELLO H4',at:latest.t+CRT_M5_MS};
 }
+let lastCrtUiStatus=new Map();
 function crtRankInfo(row){
  const crt=row?.crt;
  if(!crt||!crt.ready)return {stage:-1,side:null,distance:Infinity,status:'NO DATI'};
@@ -2206,6 +2209,15 @@ async function connect(){try{if(typeof SDK.registerEvent!=='function'||typeof co
     if(id==null)return;
     updateSpreadBadges(id);
     const now=Date.now();
+    const crtRow=[...app.results.values()].find(r=>r.id===id);
+    if(crtRow&&app.rankingView&&crtRow.crt?.stage===4){
+     const updated=crtRankInfo(crtRow).status;
+     const previous=lastCrtUiStatus.get(id);
+     if(previous!==updated){
+      lastCrtUiStatus.set(id,updated);
+      if(!app.busy)render(); // Rimuove immediatamente il segnale se il prezzo esce dal range.
+     }
+    }
     if(now-autoLastUiAt>5000){autoLastUiAt=now;reportAutoRefresh();}
    },
    error:err=>{
