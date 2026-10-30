@@ -174,7 +174,7 @@
 <section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="Stretto"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
 <div class="small" style="padding-top:8px">Per il cBot locale o Cloud l’ordine partirà con SL reale e trailing nativo OFF; il cBot dev’essere già avviato sullo stesso conto.</div></section>
 <section class="panel"><h2>STATO E DETTAGLI</h2><div id="notice">Solo dati reali dal broker. Nessun punteggio inventato.</div><div id="details" class="small">Seleziona un mercato e premi GRAFICO per vedere il prezzo.</div><button type="button" id="scan">↻ AGGIORNA CLASSIFICA</button></section>
-<footer class="foot">Versione 10.9 DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
+<footer class="foot">Versione 11.0 CORRECT TF · DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
 </main>
 <dialog id="trailDialog" aria-labelledby="trailModalHeading">
  <h3 id="trailModalHeading">Scegli il trailing</h3>
@@ -207,7 +207,14 @@ function n(v){try{return Number(v?.toString?.()??v)}catch{return NaN}}
 function field(o,keys){if(!o)return;for(const k of Object.keys(o))if(keys.some(x=>x.toLowerCase()===k.toLowerCase()))return o[k]}
 function array(v){if(Array.isArray(v))return v;if(v?.toArray)return v.toArray();if(v?.values)return Array.from(v.values());if(v&&typeof v==='object')return Object.keys(v).filter(k=>/^\d+$/.test(k)).sort((a,b)=>a-b).map(k=>v[k]);return []}
 function list(root,keys,level=0){if(!root||level>5||typeof root!=='object')return [];const direct=array(field(root,keys));if(direct.length)return direct;for(const child of Object.values(root)){if(child&&typeof child==='object'){const nested=list(child,keys,level+1);if(nested.length)return nested}}return []}
-const themes=[{name:'M5',period:5,legacy:5,minutes:5,weight:10},{name:'M15',period:7,legacy:7,minutes:15,weight:20},{name:'M30',period:8,legacy:8,minutes:30,weight:30},{name:'H1',period:9,legacy:9,minutes:60,weight:40}];
+// SDK WebView getTrendbarList expects ProtoTimeframe, NOT ProtoOATrendbarPeriod.
+const PLUGIN_TF=Object.freeze({M5:5,M15:11,M30:13,H1:15,H4:18,D1:22});
+const themes=[
+{name:'M5',period:PLUGIN_TF.M5,legacy:PLUGIN_TF.M5,minutes:5,weight:10},
+{name:'M15',period:PLUGIN_TF.M15,legacy:PLUGIN_TF.M15,minutes:15,weight:20},
+{name:'M30',period:PLUGIN_TF.M30,legacy:PLUGIN_TF.M30,minutes:30,weight:30},
+{name:'H1',period:PLUGIN_TF.H1,legacy:PLUGIN_TF.H1,minutes:60,weight:40}
+];
 const watch=['XAUUSD','US100','EURUSD','US500','USDJPY','GBPUSD','AUDUSD','NZDUSD','XAGUSD','EURJPY','GBPJPY','CADJPY','USOIL','UKOIL','DE40','DAX40','NAS100','EURGBP','USDCHF','AUDJPY','CHFJPY','EURAUD','NZDJPY','GBPCHF','BTCUSD','ETHUSD'];
 function isCryptoMarket(name){
  const n=String(name||'').trim().toUpperCase();
@@ -221,7 +228,7 @@ function isCryptoMarket(name){
 // Pubblicazione GitHub Pages con URL stabile (?v=81): il manifest separato
 // viene richiesto senza cache. Un reload interno aggiunge un token variabile,
  // ma non cambia l'indirizzo che l'utente ha salvato.
-const MOBILE_BUILD=109,MOBILE_VERSION='10.9 DUAL CRT + TREND';
+const MOBILE_BUILD=110,MOBILE_VERSION='11.0 CORRECT TF';
 let latestPublishedBuild=MOBILE_BUILD,versionCheckBusy=false;
 function mobileReleaseUI(message,outdated=false){
  const bar=document.getElementById('mobileReleaseBar');
@@ -581,6 +588,17 @@ function trendStrength(all){
   return {side:dir,strength,adx,efficiency,extended,weakening};
 }
 function barsFromProto(res){return list(res,['trendbar','trendbars']).map(x=>{const lo=n(field(x,['low']))||0;return{t:(n(field(x,['utcTimestampInMinutes']))||0)*60000,o:(lo+(n(field(x,['deltaOpen']))||0))/100000,h:(lo+(n(field(x,['deltaHigh']))||0))/100000,l:lo/100000,c:(lo+(n(field(x,['deltaClose']))||0))/100000,v:n(field(x,['volume']))}}).sort((a,b)=>a.t-b.t)}
+function assertTrendbarCadence(bars,minutes,name){
+ const b=[...(bars||[])].filter(x=>Number.isFinite(x.t)).sort((x,y)=>x.t-y.t).slice(-24),d=[];
+ for(let i=1;i<b.length;i++){const step=b[i].t-b[i-1].t;if(step>0)d.push(step)}
+ if(d.length>=3){
+  d.sort((x,y)=>x-y);
+  const median=d[Math.floor(d.length/2)];
+  if(median<.85*minutes*60000)throw Error(name+': API ha restituito candele di '+
+    Math.round(median/60000)+' min anziché '+minutes+' min. Analisi BLOCCATA.');
+ }
+ return bars;
+}
 async function trendbars(id,tf){
  const to=Date.now();let error=null,best=[];
  // Non usare solo ore di calendario: nel weekend mancano nuove candele.
@@ -589,7 +607,7 @@ async function trendbars(id,tf){
   for(const period of [...new Set([tf.period,tf.legacy])]){
    try{
     const response=await firstValueFrom(SDK.getTrendbarList(app.adapter,{symbolId:id,period,fromTimestamp:from,toTimestamp:to,count:300,type:0}).pipe(take(1),timeout({first:9500})));
-    const closed=barsFromProto(response).filter(b=>to>=b.t+tf.minutes*60000);
+    const closed=assertTrendbarCadence(barsFromProto(response),tf.minutes,tf.name).filter(b=>to>=b.t+tf.minutes*60000);
     if(closed.length>best.length)best=closed;
     if(closed.length>=110)return closed;
    }catch(ex){error=ex}
@@ -601,23 +619,22 @@ async function trendbars(id,tf){
 const HTF_CONTEXT_CACHE=new Map();
 async function contextBars(id,period,minutes){
  const key=id+':'+period,now=Date.now(),existing=HTF_CONTEXT_CACHE.get(key);
- // H4/D1 si aggiornano solo alla chiusura, con margine per latenza.
- const bucket=Math.floor((now-90000)/(minutes*60000));
- if(existing&&existing.bucket===bucket)return existing.bars;
- const from=now-(period===12?420:95)*86400000;
+ if(existing&&now-(existing.fetchedAt||0)<180000)return existing.bars;
+ const from=now-(period===PLUGIN_TF.D1?420:95)*86400000;
  try{
   const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
    symbolId:id,period,fromTimestamp:from,toTimestamp:now,count:270,type:0
   }).pipe(take(1),timeout({first:9500})));
-  const bars=barsFromProto(res).filter(v=>now>=v.t+minutes*60000)
-    .sort((a,b)=>a.t-b.t);
-  if(bars.length<65)throw Error('barre '+(period===12?'D1':'H4')+' non sufficienti ('+bars.length+')');
+  const bars=assertTrendbarCadence(barsFromProto(res),minutes,
+   period===PLUGIN_TF.D1?'D1':'H4')
+   .filter(v=>now>=v.t+minutes*60000).sort((a,b)=>a.t-b.t);
+  if(bars.length<65)throw Error('Barre '+(period===PLUGIN_TF.D1?'D1':'H4')+
+    ' insufficienti ('+bars.length+')');
   const result=bars.slice(-180);
-  HTF_CONTEXT_CACHE.set(key,{bucket,bars:result});
+  HTF_CONTEXT_CACHE.set(key,{fetchedAt:now,bars:result});
   return result;
  }catch(err){
-  // Contesto non disponibile NON interrompe i normali segnali M5.
-  if(existing&&existing.bars?.length>=65)return existing.bars;
+  if(existing?.bars?.length>=65&&now-(existing.fetchedAt||0)<600000)return existing.bars;
   throw err;
  }
 }
@@ -685,7 +702,7 @@ async function marketContextForSymbol(id,side,m5bars){
  if(!side)return summarizeMarketContext(side,null,null);
  const price=(m5bars||[]).at(-1)?.c;
  if(!(price>0))return summarizeMarketContext(side,null,null);
- const [h4,d1]=await Promise.allSettled([contextBars(id,10,240),contextBars(id,12,1440)]);
+ const [h4,d1]=await Promise.allSettled([contextBars(id,PLUGIN_TF.H4,240),contextBars(id,PLUGIN_TF.D1,1440)]);
  return summarizeMarketContext(side,
   h4.status==='fulfilled'?analyzeContextZone('H4',h4.value,price,side):null,
   d1.status==='fulfilled'?analyzeContextZone('D1',d1.value,price,side):null);
@@ -776,7 +793,7 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
        const m5Volume=calculateM5Volume(m5bars);
       const context=await marketContextForSymbol(id,rawSide,m5bars);
       let crtH4=null,crt={ready:false,stage:-1,status:'DATI H4 NON DISPONIBILI'},crtError='';
-      try{crtH4=await crtLastClosedH4(id,h1bars,m5bars);crt=evaluateCRT(crtH4,m5bars);}
+      try{crtH4=await crtLastClosedH4(id);crt=evaluateCRT(crtH4,m5bars);}
       catch(crtErr){crtError=String(crtErr?.message||crtErr);console.warn('CRT H4',name,crtError)}
       const prior=app.results.get(name);
       let buy=rawBuy,sell=rawSell;
@@ -1064,85 +1081,41 @@ let crtConfirmBars=2;
 try{const old=Number(localStorage.getItem(CRT_PREF_KEY));if(Number.isInteger(old)&&old>=2&&old<=6)crtConfirmBars=old;}catch{}
 const crtSelect=document.getElementById('crtConfirmCount');
 if(crtSelect)crtSelect.value=String(crtConfirmBars);
-/* H4 ufficiale: priorità al dato nativo del broker; fallback SOLO con 4 H1 chiuse e consecutive.
-   H4 UTC se ricostruita: l'ora del broker potrebbe avere un allineamento diverso. */
-function reconstructH4FromH1(source,now=Date.now()){
- const usable=(source||[]).filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
-  b.t+3600000<=now).sort((a,b)=>a.t-b.t);
- const groups=new Map();
- for(const b of usable){
-  const start=Math.floor(b.t/CRT_H4_MS)*CRT_H4_MS;
-  if(!groups.has(start))groups.set(start,[]);
-  groups.get(start).push(b);
- }
- const keys=[...groups.keys()].filter(t=>t+CRT_H4_MS<=now).sort((a,b)=>b-a);
- for(const t of keys){
-  const four=groups.get(t);
-  if(four.length!==4||!four.every((b,i)=>b.t===t+i*3600000))continue;
-  return {t,o:four[0].o,h:Math.max(...four.map(b=>b.h)),
-   l:Math.min(...four.map(b=>b.l)),c:four[3].c,source:'4 H1 consecutive · UTC'};
- }
- return null;
-}
-function reconstructH4FromM5(source,now=Date.now()){
- const usable=(source||[]).filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
-  b.t+CRT_M5_MS<=now).sort((a,b)=>a.t-b.t);
- const groups=new Map();
- for(const b of usable){
-  const start=Math.floor(b.t/CRT_H4_MS)*CRT_H4_MS;
-  if(!groups.has(start))groups.set(start,[]);
-  groups.get(start).push(b);
- }
- const keys=[...groups.keys()].filter(t=>t+CRT_H4_MS<=now).sort((a,b)=>b-a);
- for(const t of keys){
-  const bars=groups.get(t);
-  if(bars.length!==48||!bars.every((b,i)=>b.t===t+i*CRT_M5_MS))continue;
-  return {t,o:bars[0].o,h:Math.max(...bars.map(b=>b.h)),
-   l:Math.min(...bars.map(b=>b.l)),c:bars[47].c,
-   source:'48 M5 consecutive · UTC'};
- }
- return null;
-}
-async function crtLastClosedH4(id,h1source=[],m5source=[]){
- const now=Date.now(),bucket=Math.floor((now-90000)/CRT_H4_MS),cached=CRT_H4_CACHE.get(id);
- if(cached&&cached.bucket===bucket&&cached.h4)return cached.h4;
- let native=null,lastError='',attempts=0;
- const known=HTF_CONTEXT_CACHE.get(id+':10');
- if(known?.bars?.length){
-  const b=known.bars.filter(x=>x&&x.t+CRT_H4_MS<=now).at(-1);
-  if(b&&b.h>b.l&&b.t>0)native={...b,source:'H4 broker (cache)'};
- }
- if(!native){
-  for(const days of [7,21]){
-   attempts++;
-   try{
-    const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
-     symbolId:id,period:10,fromTimestamp:now-days*86400000,toTimestamp:now,
-     count:days===21?125:55,type:0
-    }).pipe(take(1),timeout({first:5500})));
-    const listH4=barsFromProto(res).filter(b=>b&&b.t>0&&b.t+CRT_H4_MS<=now&&b.h>b.l);
-    const latest=listH4.at(-1);
-    if(latest){native={...latest,source:'H4 broker'};break;}
-    lastError='H4: risposta senza candele chiuse ('+days+' giorni)';
-   }catch(err){lastError='H4 '+days+' giorni: '+String(err?.message||err);console.warn('CRT H4 API',id,lastError);}
-   // Se H4 ufficiale fallisce, non attendere altre chiamate se H1/M5 sono complete.
-   if(!native){
-    const backup=reconstructH4FromH1(h1source,now)||reconstructH4FromM5(m5source,now);
-    if(backup){CRT_H4_CACHE.set(id,{bucket,h4:backup});return backup;}
-   }
+/* Only broker-native H4 (ProtoTimeframe.H4=18) may authorize CRT.
+  Never substitute an aggregation that might differ from the broker's H4 session. */
+async function crtLastClosedH4(id){
+ const now=Date.now(),cached=CRT_H4_CACHE.get(id);
+ if(cached?.h4&&now-cached.fetchedAt<180000)return cached.h4;
+ const known=HTF_CONTEXT_CACHE.get(id+':'+PLUGIN_TF.H4);
+ if(known?.bars?.length&&now-(known.fetchedAt||0)<180000){
+  const bars=assertTrendbarCadence(known.bars,240,'H4');
+  const last=bars.filter(b=>b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now).at(-1);
+  if(last){
+   const h4={...last,source:'H4 broker · periodo 18'};
+   CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
+   return h4;
   }
  }
- if(native){
-  CRT_H4_CACHE.set(id,{bucket,h4:native});
-  return native;
+ let lastError='Nessun dato H4 dal broker';
+ for(const days of [7,21]){
+  try{
+   const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
+    symbolId:id,period:PLUGIN_TF.H4,fromTimestamp:now-days*86400000,
+    toTimestamp:now,count:days===21?125:55,type:0
+   }).pipe(take(1),timeout({first:6500})));
+   const bars=assertTrendbarCadence(barsFromProto(res),240,'H4')
+     .filter(b=>b&&b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now);
+   const last=bars.at(-1);
+   if(last){
+    const h4={...last,source:'H4 broker · periodo 18'};
+    CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
+    return h4;
+   }
+   lastError='Nessuna H4 chiusa disponibile ('+days+' giorni)';
+  }catch(err){lastError=String(err?.message||err);console.warn('CRT H4',id,lastError);}
  }
- const reconstruct=reconstructH4FromH1(h1source,now)||reconstructH4FromM5(m5source,now);
- if(reconstruct){
-  CRT_H4_CACHE.set(id,{bucket,h4:reconstruct});
-  return reconstruct;
- }
- throw Error('H4 non disponibile: '+lastError+'; fallback 4 H1 consecutive non trovato ('+
-  h1source.length+' H1 / '+m5source.length+' M5). Tentativi: '+attempts);
+ throw Error('CRT H4 non disponibile: '+lastError+
+  '. Per sicurezza non ricostruisco una H4 con candele di timeframe differenti.');
 }
 function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  const invalid={ready:false,status:'H4/M5 NON DISPONIBILI',stage:-1,side:null,progress:0,distance:Infinity,price:null};
@@ -1235,6 +1208,7 @@ function crtPanelHTML(row){
  const lvl=c.side==='SELL'?c.high:c.low;
  const sideText=c.side==='SELL'?'SELL se rientra sotto il massimo':'BUY se rientra sopra il minimo';
  const time=Number.isFinite(h.t)?new Date(h.t+CRT_H4_MS).toLocaleString('it-IT'):'N/D';
+ const opened=Number.isFinite(h.t)?new Date(h.t).toLocaleString('it-IT'):'N/D';
  const status=String(c.status||'ATTENDI');
  const warn=c.stage===4?crtConfirmBars+' corpi M5 rientrati: sulla candela M5 successiva valutare ingresso MANUALE, previo controllo prezzo e rischio.':
   c.stage===3?'Mancano '+Math.max(0,crtConfirmBars-c.progress)+' candele M5 consecutive con corpo interno.':
@@ -1244,7 +1218,7 @@ function crtPanelHTML(row){
  return '<div class="crtPanel" data-stage="'+c.stage+'"><div class="crtHead">CRT · '+e(status)+
   ' · '+e(c.side||'NEUTRO')+'</div><div class="crtLevels"><span>H4 MAX '+e(fmtStructurePrice(row.name,h.h))+
   '</span><span>H4 MIN '+e(fmtStructurePrice(row.name,h.l))+'</span></div>'+
-  '<div class="crtStatus">Distanza livello '+distance+' · H4 chiusa '+e(time)+
+  '<div class="crtStatus">Distanza livello '+distance+' · H4 aperta '+e(opened)+' · chiusa '+e(time)+
   ' · fonte '+e(h.source||'H4 broker')+
   (Number.isFinite(lvl)?' · livello osservato '+e(fmtStructurePrice(row.name,lvl)):'')+
   '</div><div class="crtStatus">'+e(warn)+'</div><div class="crtNote">'+e(sideText)+
