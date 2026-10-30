@@ -1166,6 +1166,16 @@ function crtRankInfo(row){
     return {...crt,stage:0,side:null,status:'PREZZO LIVE FUORI DAL RANGE · NO TRADE',progress:0};
   }
  }
+ const q=validatedQuote(app.quotes.get(Number(row.id)),now);
+ if(q&&crt.stage!==4&&crt.ready&&crt.high>crt.low){
+  const price=(q.bid+q.ask)/2;
+  const dHigh=Math.abs(price-crt.high),dLow=Math.abs(price-crt.low);
+  const distance=Math.min(dHigh,dLow)/crt.range;
+  const nearest=dHigh<=dLow?'SELL':'BUY';
+  if(crt.stage<=1)return {...crt,price,distance,side:nearest,stage:distance<=CRT_NEAR_LIMIT?1:0,
+   status:distance<=CRT_NEAR_LIMIT?'VICINO '+(nearest==='SELL'?'MAX':'MIN')+' H4 · SOLO AVVISO':'LONTANO DAI LIVELLI'};
+  return {...crt,price,distance};
+ }
  return crt;
 }
 function crtPanelHTML(row){
@@ -1181,7 +1191,7 @@ function crtPanelHTML(row){
  const warn=c.stage===4?crtConfirmBars+' corpi M5 rientrati: sulla candela M5 successiva valutare ingresso MANUALE, previo controllo prezzo e rischio.':
   c.stage===3?'Mancano '+Math.max(0,crtConfirmBars-c.progress)+' candele M5 consecutive con corpo interno.':
   c.stage===2?'Rottura rilevata: attendi i corpi M5 di rientro.':
-  c.stage===1?'Prezzo vicino al livello, MA nessuna rottura/rientro confermati.':
+  c.stage===1?'AVVISO VICINANZA: il prezzo è vicino a un livello H4, ma NON c’è ancora ingresso. Attendi rottura e rientri M5.':
   'Nessun ingresso CRT confermato.';
  return '<div class="crtPanel" data-stage="'+c.stage+'"><div class="crtHead">CRT · '+e(status)+
   ' · '+e(c.side||'NEUTRO')+'</div><div class="crtLevels"><span>H4 MAX '+e(fmtStructurePrice(row.name,h.h))+
@@ -1316,67 +1326,105 @@ function assertConfirmedCRT(row,expected=null,requestedSide=null,quote=null){
  }
  return {confirmedAt:c.confirmedAt,side:c.side,h4At:h.t,required:crtConfirmBars};
 }
+function assertConfirmedTrend(row,expected=null,requestedSide=null){
+ if(!row)throw Error('TREND: simbolo non disponibile.');
+ const p=effectiveSetup(row),at=Number(p.closedAt),now=Date.now();
+ if(p.status!=='INGRESSO CONFERMATO'||!['BUY','SELL'].includes(p.side))
+  throw Error('TREND: attesa conferma M5 valida (direzione, struttura, volumi).');
+ if(!(at>0&&at<=now&&now-at<=5*60000))
+  throw Error('TREND: segnale M5 scaduto, attendi una nuova conferma.');
+ if(requestedSide&&requestedSide!==p.side)
+  throw Error('TREND: lato '+requestedSide+' diverso da '+p.side+' confermato.');
+ if(expected&&(expected.closedAt!==at||expected.side!==p.side))
+  throw Error('TREND: conferma M5 cambiata.');
+ return {closedAt:at,side:p.side};
+}
 function marketTradeControlsHTML(r,p,view){
- const c=crtRankInfo(r),allowed=c.stage===4&&['BUY','SELL'].includes(c.side);
- const heading=allowed?'<div class="signalTradeHead"><strong>✓ CRT CONFERMATA · '+e(c.side)+
-  ' · '+crtConfirmBars+'/'+crtConfirmBars+' M5 RIENTRATE</strong>'+
-  '<span class="signalTradeHint">Operazione solo nella terza M5 e con prezzo live ancora nel range. Ricontrollo prima dell’invio.</span></div>':
-  '<div class="signalTradePending"><b>ATTENDI CRT · NESSUNA OPERAZIONE ABILITATA</b>'+
-  '<div>Prima rottura H4, poi '+crtConfirmBars+' corpi M5 consecutivi con apertura e chiusura nel range.</div></div>';
+ const crtMode=isCRTView(view),c=crtRankInfo(r),t=effectiveSetup(r);
+ const side=crtMode?c.side:t.side,ready=crtMode?c.stage===4:
+  t.status==='INGRESSO CONFERMATO'&&Number(t.closedAt)>0&&
+  Date.now()-Number(t.closedAt)<=5*60000;
+ const allowed=ready&&['BUY','SELL'].includes(side);
+ const heading=allowed?
+  '<div class="signalTradeHead"><strong>✓ '+(crtMode?'CRT H4/M5':'TREND M5')+
+  ' CONFERMATO · '+e(side)+'</strong><span class="signalTradeHint">'+
+  (crtMode?'Ingresso solo sulla M5 successiva; prezzo dentro H4 obbligatorio.':
+    'Ingresso TREND autorizzato dalla conferma M5, indipendente dal CRT.')+
+  ' L’ordine viene ricontrollato prima dell’invio.</span></div>':
+  '<div class="signalTradePending"><b>ATTENDI '+(crtMode?'CRT':'TREND')+
+  ' · NESSUN ORDINE ABILITATO</b><div>'+
+  (crtMode?'Servono rottura dell’H4 e '+crtConfirmBars+' corpi M5 di rientro consecutivi.':
+   'Servono direzione, struttura, volumi e M5 di ingresso CONFERMATA.')+
+  '</div></div>';
+ const model=crtMode?'crt':'trend';
  return heading+'<div class="controls">'+
   '<label>LOTTO<input class="tradeLot" data-symbol="'+e(r.name)+'" type="number" min="0.001" step="0.01" value="'+p.lot+'"/></label>'+
   '<label>SL MAX €<input class="tradeSl" data-symbol="'+e(r.name)+'" type="number" min="0.5" step="0.5" value="'+p.sl+'"/></label>'+
   '<label>TRAIL<input type="hidden" class="tradeTrail" data-symbol="'+e(r.name)+'" value="'+e(p.trail)+'">'+
-   '<button type="button" class="trailPickerBtn" data-trail-open="symbol" data-symbol="'+e(r.name)+'" data-value="'+e(p.trail)+'">'+e(p.trail)+' ▾</button></label>'+
-  '<button class="go" data-details="'+e(r.name)+'">GRAFICO H4/M5 ↗</button></div>'+
+  '<button type="button" class="trailPickerBtn" data-trail-open="symbol" data-symbol="'+e(r.name)+'" data-value="'+e(p.trail)+'">'+e(p.trail)+' ▾</button></label>'+
+  '<button class="go" data-details="'+e(r.name)+'">GRAFICO '+(crtMode?'H4/M5':'M5')+' ↗</button></div>'+
   '<div class="rowbuttons signalTradeBtns">'+
-   '<button class="action buy" type="button" data-draft="'+e(r.name)+'" data-side="BUY" data-crt-required="1" '+(allowed&&c.side==='BUY'?'':'disabled')+'>▲ BUY</button>'+
-   '<button class="action sell" type="button" data-draft="'+e(r.name)+'" data-side="SELL" data-crt-required="1" '+(allowed&&c.side==='SELL'?'':'disabled')+'>▼ SELL</button></div>';
+   '<button class="action buy" type="button" data-draft="'+e(r.name)+'" data-side="BUY" data-signal-engine="'+model+'" '+(allowed&&side==='BUY'?'':'disabled')+'>▲ BUY</button>'+
+   '<button class="action sell" type="button" data-draft="'+e(r.name)+'" data-side="SELL" data-signal-engine="'+model+'" '+(allowed&&side==='SELL'?'':'disabled')+'>▼ SELL</button></div>';
 }
 function render(){
- const view=['crt','trends','buy','sell','signals'].includes(app.rankingView)?app.rankingView:'crt';
+ const view=app.rankingView||'crt',crtMode=isCRTView(view);
  const list=chooseRankingRows(app.results.values(),view,app.minScore);
- const states=[...app.results.values()].map(crtRankInfo);
- const confirmed=states.filter(c=>c.stage===4).length,
-       forming=states.filter(c=>c.stage===3).length,
-       breakouts=states.filter(c=>c.stage===2).length;
- const names={crt:'CLASSIFICA CRT · H4/M5',trends:'TOP 10 · VICINANZA CRT',
-  buy:'CRT · POSSIBILI BUY',sell:'CRT · POSSIBILI SELL',signals:'CRT · CONFERMATI'};
- $('rankingTitle').textContent=names[view];
- $('scoreFilterPanel').hidden=true;
+ const statusList=[...app.results.values()].map(crtRankInfo);
+ const nConfirmed=statusList.filter(c=>c.stage===4).length,
+       nForming=statusList.filter(c=>c.stage===3).length,
+       nNear=statusList.filter(c=>c.stage===1).length;
+ const headings={
+  crt:'CLASSIFICA CRT · H4/M5', 'crt-near':'CRT · VICINI AI LIVELLI H4',
+  'crt-ready':'CRT · CONFERMATI',trends:'TREND · TOP 10',
+  buy:'TREND · TOP BUY',sell:'TREND · TOP SELL',signals:'TREND · SEGNALI M5'
+ };
+ $('rankingTitle').textContent=headings[view]||headings.crt;
+ $('crtSettings').hidden=!crtMode;
+ $('scoreFilterPanel').hidden=crtMode||view==='signals';
  for(const btn of document.querySelectorAll('[data-rank-view]'))
   btn.setAttribute('aria-pressed',String(btn.dataset.rankView===view));
- $('rankingViewHint').textContent='CRT H4/M5 · '+confirmed+' confermati · '+forming+
-  ' rientri in corso · '+breakouts+' rotture · ingresso solo dopo '+crtConfirmBars+
-  ' M5 con corpo dentro il range. La forza trend NON genera ingressi.';
- $('ranking').dataset.mode=view==='signals'?'signals':'crt';
- $('ranking').innerHTML=list.length?list.map(({r,side},i)=>{
-  const p=prefsFor(r.name),c=crtRankInfo(r);
-  const stage=c.stage===4?'✓ READY':c.stage===3?'RIENTRO '+c.progress+'/'+crtConfirmBars:
-   c.stage===2?'ROTTURA':c.stage===1?'VICINO':c.stage===0?'ATTESA':'N/D';
-  return '<article class="market"><div class="marketTop"><span class="num">'+(i+1)+
-   '</span><span class="name">'+e(r.name)+'</span>'+
-   '<span class="score '+(side==='BUY'?'up':side==='SELL'?'down':'')+'">'+e(stage)+
-   '<small>FASE CRT · NON È UN PUNTEGGIO</small></span></div>'+
+ $('rankingViewHint').textContent=crtMode?
+  'CRT H4/M5 · '+nConfirmed+' confermati · '+nForming+' rientri · '+nNear+
+  ' vicini (entro '+Math.round(CRT_NEAR_LIMIT*100)+'% del range H4). VICINO è un avviso, NON un ordine.':
+  'TREND M5 · indipendente dalla CRT. Classifica per forza multi-timeframe; ordini consentiti solo da conferma M5 strutturale e volumi.';
+ $('ranking').dataset.mode=view;
+ $('ranking').innerHTML=list.length?list.map(({r,side,score,setup},i)=>{
+  const pref=prefsFor(r.name),c=crtRankInfo(r);
+  const stage=c.stage===4?'✓ CONFERMATO':c.stage===3?'RIENTRO '+c.progress+'/'+crtConfirmBars:
+   c.stage===2?'ROTTURA':c.stage===1?'VICINO H4':c.stage===0?'ATTESA':'N/D';
+  const crtLabel=c.stage===4?(side==='BUY'?'▲ BUY CRT':'▼ SELL CRT'):
+   c.stage===3?'RIENTRO · '+(side==='BUY'?'MIN':'MAX')+' H4':
+   c.stage===2?'ROTTURA · '+(side==='BUY'?'MIN':'MAX')+' H4':
+   c.stage===1?'VICINO · '+(side==='BUY'?'MIN':'MAX')+' H4':'→ IN ATTESA';
+  const trendLabel=side==='BUY'?'▲ BUY TREND':side==='SELL'?'▼ SELL TREND':'→ NEUTRO';
+  const status=crtMode?c.status:(setup.status||'ATTENDI');
+  const tag=crtMode?'CRT':'TREND';
+  const heading=crtMode?stage:String(score)+'<small>/100 · FORZA TREND</small>';
+  const alert=crtMode&&c.stage===1?
+   '<div class="crtAlert">PROSSIMO A '+(side==='BUY'?'MIN':'MAX')+
+   ' H4 · distanza '+(100*c.distance).toFixed(1)+'% del range · ATTENDI LA ROTTURA</div>':'';
+  return '<article class="market"><div class="marketTop"><span class="num">'+(i+1)+'</span>'+
+   '<span class="name">'+e(r.name)+'</span><span class="engineTag '+(crtMode?'':'trend')+'">'+tag+'</span>'+
+   '<span class="score '+(side==='BUY'?'up':side==='SELL'?'down':'')+'">'+heading+
+   (crtMode?'<small>FASE CRT</small>':'')+'</span></div>'+
    '<div class="meta"><span class="'+(side==='BUY'?'up':side==='SELL'?'down':'')+'">'+
-   (c.stage===4?(side==='BUY'?'▲ BUY CRT CONFERMATO':'▼ SELL CRT CONFERMATO'):
-    c.stage===3?'RIENTRO · '+(side==='BUY'?'MIN H4':'MAX H4'):
-    c.stage===2?'ROTTURA · '+(side==='BUY'?'MIN H4':'MAX H4'):
-    c.stage===1?'VICINO · '+(side==='BUY'?'MIN H4':'MAX H4'):'→ IN ATTESA')+
-   '</span><span class="phaseTag">'+e(c.status||'NON DISPONIBILE')+'</span>'+
+   (crtMode?crtLabel:trendLabel)+'</span>'+
+   '<span class="phaseTag">'+e(status)+'</span>'+
    '<span class="spreadTag" data-spread-id="'+Number(r.id)+'" data-grade="NON DISPONIBILE">SPREAD: IN ATTESA</span></div>'+
-   crtPanelHTML(r)+marketTradeControlsHTML(r,p,view)+'</article>';
+   alert+(crtMode?crtPanelHTML(r):setupPanelHTML(r))+
+   marketTradeControlsHTML(r,pref,view)+'</article>';
  }).join(''):'<p class="small">'+
-   (view==='signals'?'NESSUNA CRT CONFERMATA. Nessun BUY o SELL abilitato.':
-    'Nessun simbolo con dati H4/M5 disponibili per questa vista.')+'</p>';
- if(view==='crt'||view==='trends'||view==='signals'){
-  if(list.length)app.selected=list[0].r.name;
- }else if(!app.selected||!app.results.has(app.selected))app.selected=list.length?list[0].r.name:null;
+  (view==='crt-near'?'Nessun mercato attualmente entro '+Math.round(CRT_NEAR_LIMIT*100)+'% dal massimo/minimo H4.':
+   view==='crt-ready'?'Nessuna conferma CRT recente.':
+   view==='signals'?'Nessuna conferma TREND M5 recente.':
+   'Nessun mercato per questa classifica; controlla la connessione e aggiorna.')+'</p>';
+ if((crtMode||view==='trends'||view==='signals')&&list.length)app.selected=list[0].r.name;
+ else if(!app.selected||!app.results.has(app.selected))app.selected=list.length?list[0].r.name:null;
  drawTrendChart(app.results.get(app.selected));
  refreshSpreadBadges();
  if(!app.busy)void subscribeRankSpreads();
 }
-
 // Spread informativo da Bid e Ask del broker: NON BLOCCA ordini e NON cambia trailing.
 function spreadAssessment(name,q){
  // Stessa verifica delle quotazioni usata dal ticket: non mostrare uno spread
