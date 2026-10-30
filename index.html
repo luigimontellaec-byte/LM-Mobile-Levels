@@ -174,7 +174,7 @@
 <section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="Stretto"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
 <div class="small" style="padding-top:8px">Per il cBot locale o Cloud l’ordine partirà con SL reale e trailing nativo OFF; il cBot dev’essere già avviato sullo stesso conto.</div></section>
 <section class="panel"><h2>STATO E DETTAGLI</h2><div id="notice">Solo dati reali dal broker. Nessun punteggio inventato.</div><div id="details" class="small">Seleziona un mercato e premi GRAFICO per vedere il prezzo.</div><button type="button" id="scan">↻ AGGIORNA CLASSIFICA</button></section>
-<footer class="foot">Versione 10.9 DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
+<footer class="foot">Versione 11.0 CORRECT TF · DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
 </main>
 <dialog id="trailDialog" aria-labelledby="trailModalHeading">
  <h3 id="trailModalHeading">Scegli il trailing</h3>
@@ -207,7 +207,14 @@ function n(v){try{return Number(v?.toString?.()??v)}catch{return NaN}}
 function field(o,keys){if(!o)return;for(const k of Object.keys(o))if(keys.some(x=>x.toLowerCase()===k.toLowerCase()))return o[k]}
 function array(v){if(Array.isArray(v))return v;if(v?.toArray)return v.toArray();if(v?.values)return Array.from(v.values());if(v&&typeof v==='object')return Object.keys(v).filter(k=>/^\d+$/.test(k)).sort((a,b)=>a-b).map(k=>v[k]);return []}
 function list(root,keys,level=0){if(!root||level>5||typeof root!=='object')return [];const direct=array(field(root,keys));if(direct.length)return direct;for(const child of Object.values(root)){if(child&&typeof child==='object'){const nested=list(child,keys,level+1);if(nested.length)return nested}}return []}
-const themes=[{name:'M5',period:5,legacy:5,minutes:5,weight:10},{name:'M15',period:7,legacy:7,minutes:15,weight:20},{name:'M30',period:8,legacy:8,minutes:30,weight:30},{name:'H1',period:9,legacy:9,minutes:60,weight:40}];
+// SDK WebView getTrendbarList expects ProtoTimeframe, NOT ProtoOATrendbarPeriod.
+const PLUGIN_TF=Object.freeze({M5:5,M15:11,M30:13,H1:15,H4:18,D1:22});
+const themes=[
+{name:'M5',period:PLUGIN_TF.M5,legacy:PLUGIN_TF.M5,minutes:5,weight:10},
+{name:'M15',period:PLUGIN_TF.M15,legacy:PLUGIN_TF.M15,minutes:15,weight:20},
+{name:'M30',period:PLUGIN_TF.M30,legacy:PLUGIN_TF.M30,minutes:30,weight:30},
+{name:'H1',period:PLUGIN_TF.H1,legacy:PLUGIN_TF.H1,minutes:60,weight:40}
+];
 const watch=['XAUUSD','US100','EURUSD','US500','USDJPY','GBPUSD','AUDUSD','NZDUSD','XAGUSD','EURJPY','GBPJPY','CADJPY','USOIL','UKOIL','DE40','DAX40','NAS100','EURGBP','USDCHF','AUDJPY','CHFJPY','EURAUD','NZDJPY','GBPCHF','BTCUSD','ETHUSD'];
 function isCryptoMarket(name){
  const n=String(name||'').trim().toUpperCase();
@@ -221,7 +228,7 @@ function isCryptoMarket(name){
 // Pubblicazione GitHub Pages con URL stabile (?v=81): il manifest separato
 // viene richiesto senza cache. Un reload interno aggiunge un token variabile,
  // ma non cambia l'indirizzo che l'utente ha salvato.
-const MOBILE_BUILD=109,MOBILE_VERSION='10.9 DUAL CRT + TREND';
+const MOBILE_BUILD=110,MOBILE_VERSION='11.0 CORRECT TF';
 let latestPublishedBuild=MOBILE_BUILD,versionCheckBusy=false;
 function mobileReleaseUI(message,outdated=false){
  const bar=document.getElementById('mobileReleaseBar');
@@ -581,6 +588,17 @@ function trendStrength(all){
   return {side:dir,strength,adx,efficiency,extended,weakening};
 }
 function barsFromProto(res){return list(res,['trendbar','trendbars']).map(x=>{const lo=n(field(x,['low']))||0;return{t:(n(field(x,['utcTimestampInMinutes']))||0)*60000,o:(lo+(n(field(x,['deltaOpen']))||0))/100000,h:(lo+(n(field(x,['deltaHigh']))||0))/100000,l:lo/100000,c:(lo+(n(field(x,['deltaClose']))||0))/100000,v:n(field(x,['volume']))}}).sort((a,b)=>a.t-b.t)}
+function assertTrendbarCadence(bars,minutes,name){
+ const b=[...(bars||[])].filter(x=>Number.isFinite(x.t)).sort((x,y)=>x.t-y.t).slice(-24),d=[];
+ for(let i=1;i<b.length;i++){const step=b[i].t-b[i-1].t;if(step>0)d.push(step)}
+ if(d.length>=3){
+  d.sort((x,y)=>x-y);
+  const median=d[Math.floor(d.length/2)];
+  if(median<.85*minutes*60000)throw Error(name+': API ha restituito candele di '+
+    Math.round(median/60000)+' min anziché '+minutes+' min. Analisi BLOCCATA.');
+ }
+ return bars;
+}
 async function trendbars(id,tf){
  const to=Date.now();let error=null,best=[];
  // Non usare solo ore di calendario: nel weekend mancano nuove candele.
@@ -589,7 +607,7 @@ async function trendbars(id,tf){
   for(const period of [...new Set([tf.period,tf.legacy])]){
    try{
     const response=await firstValueFrom(SDK.getTrendbarList(app.adapter,{symbolId:id,period,fromTimestamp:from,toTimestamp:to,count:300,type:0}).pipe(take(1),timeout({first:9500})));
-    const closed=barsFromProto(response).filter(b=>to>=b.t+tf.minutes*60000);
+    const closed=assertTrendbarCadence(barsFromProto(response),tf.minutes,tf.name).filter(b=>to>=b.t+tf.minutes*60000);
     if(closed.length>best.length)best=closed;
     if(closed.length>=110)return closed;
    }catch(ex){error=ex}
@@ -601,23 +619,22 @@ async function trendbars(id,tf){
 const HTF_CONTEXT_CACHE=new Map();
 async function contextBars(id,period,minutes){
  const key=id+':'+period,now=Date.now(),existing=HTF_CONTEXT_CACHE.get(key);
- // H4/D1 si aggiornano solo alla chiusura, con margine per latenza.
- const bucket=Math.floor((now-90000)/(minutes*60000));
- if(existing&&existing.bucket===bucket)return existing.bars;
- const from=now-(period===12?420:95)*86400000;
+ if(existing&&now-(existing.fetchedAt||0)<180000)return existing.bars;
+ const from=now-(period===PLUGIN_TF.D1?420:95)*86400000;
  try{
   const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
    symbolId:id,period,fromTimestamp:from,toTimestamp:now,count:270,type:0
   }).pipe(take(1),timeout({first:9500})));
-  const bars=barsFromProto(res).filter(v=>now>=v.t+minutes*60000)
-    .sort((a,b)=>a.t-b.t);
-  if(bars.length<65)throw Error('barre '+(period===12?'D1':'H4')+' non sufficienti ('+bars.length+')');
+  const bars=assertTrendbarCadence(barsFromProto(res),minutes,
+   period===PLUGIN_TF.D1?'D1':'H4')
+   .filter(v=>now>=v.t+minutes*60000).sort((a,b)=>a.t-b.t);
+  if(bars.length<65)throw Error('Barre '+(period===PLUGIN_TF.D1?'D1':'H4')+
+    ' insufficienti ('+bars.length+')');
   const result=bars.slice(-180);
-  HTF_CONTEXT_CACHE.set(key,{bucket,bars:result});
+  HTF_CONTEXT_CACHE.set(key,{fetchedAt:now,bars:result});
   return result;
  }catch(err){
-  // Contesto non disponibile NON interrompe i normali segnali M5.
-  if(existing&&existing.bars?.length>=65)return existing.bars;
+  if(existing?.bars?.length>=65&&now-(existing.fetchedAt||0)<600000)return existing.bars;
   throw err;
  }
 }
@@ -685,7 +702,7 @@ async function marketContextForSymbol(id,side,m5bars){
  if(!side)return summarizeMarketContext(side,null,null);
  const price=(m5bars||[]).at(-1)?.c;
  if(!(price>0))return summarizeMarketContext(side,null,null);
- const [h4,d1]=await Promise.allSettled([contextBars(id,10,240),contextBars(id,12,1440)]);
+ const [h4,d1]=await Promise.allSettled([contextBars(id,PLUGIN_TF.H4,240),contextBars(id,PLUGIN_TF.D1,1440)]);
  return summarizeMarketContext(side,
   h4.status==='fulfilled'?analyzeContextZone('H4',h4.value,price,side):null,
   d1.status==='fulfilled'?analyzeContextZone('D1',d1.value,price,side):null);
