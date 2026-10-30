@@ -1113,18 +1113,23 @@ async function crtLastClosedH4(id,h1source=[],m5source=[]){
   if(b&&b.h>b.l&&b.t>0)native={...b,source:'H4 broker (cache)'};
  }
  if(!native){
-  for(const days of [7,21,2]){
+  for(const days of [7,21]){
    attempts++;
    try{
     const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
      symbolId:id,period:10,fromTimestamp:now-days*86400000,toTimestamp:now,
      count:days===21?125:55,type:0
-    }).pipe(take(1),timeout({first:9000})));
+    }).pipe(take(1),timeout({first:5500})));
     const listH4=barsFromProto(res).filter(b=>b&&b.t>0&&b.t+CRT_H4_MS<=now&&b.h>b.l);
     const latest=listH4.at(-1);
     if(latest){native={...latest,source:'H4 broker'};break;}
     lastError='H4: risposta senza candele chiuse ('+days+' giorni)';
    }catch(err){lastError='H4 '+days+' giorni: '+String(err?.message||err);console.warn('CRT H4 API',id,lastError);}
+   // Se H4 ufficiale fallisce, non attendere altre chiamate se H1/M5 sono complete.
+   if(!native){
+    const backup=reconstructH4FromH1(h1source,now)||reconstructH4FromM5(m5source,now);
+    if(backup){CRT_H4_CACHE.set(id,{bucket,h4:backup});return backup;}
+   }
   }
  }
  if(native){
