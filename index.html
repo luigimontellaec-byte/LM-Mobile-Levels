@@ -744,7 +744,21 @@ function stableScore(previous,target){
 }
 async function scan(){if(!app.connected||app.busy)return;for(const name of app.results.keys())if(isCryptoMarket(name))app.results.delete(name);app.busy=true;$('scan').disabled=true;$('notice').textContent='Analizzo il broker con barre storiche chiuse…';const start=Date.now();let count=0,matched=0,failed=0,firstError='';try{
   for(const name of watch){if(isCryptoMarket(name))continue;const symbol=matchSymbol(name);if(!symbol||isCryptoMarket(symbol.name||symbol.symbolName||name))continue;const id=n(field(symbol,['id','symbolId']));if(!Number.isFinite(id))continue;matched++;
-    try{const details=[];let m5bars=[],m15bars=[],h1bars=[];const closeTimes={};for(const tf of themes){const bars=await trendbars(id,tf);closeTimes[tf.name]=bars.at(-1)?.t||0;if(tf.name==='M5')m5bars=bars;if(tf.name==='M15')m15bars=bars;if(tf.name==='H1')h1bars=bars;details.push({...trendStrength.call(tf,bars),tf:tf.name,weight:tf.weight})}
+    try{const details=[];let m5bars=[],m15bars=[],h1bars=[];const closeTimes={},trendErrors=[];
+    for(const tf of themes){
+     try{
+      const bars=await trendbars(id,tf);
+      closeTimes[tf.name]=bars.at(-1)?.t||0;
+      if(tf.name==='M5')m5bars=bars;
+      if(tf.name==='M15')m15bars=bars;
+      if(tf.name==='H1')h1bars=bars;
+      details.push({...trendStrength.call(tf,bars),tf:tf.name,weight:tf.weight});
+     }catch(err){
+      if(tf.name==='M5')throw err;
+      trendErrors.push(tf.name+': '+String(err?.message||err));
+      details.push({tf:tf.name,weight:tf.weight,side:null,strength:0});
+     }
+    }
       const rawBuy=Math.round(Math.min(100,details.reduce((a,x)=>a+(x.side==='BUY'?x.weight*x.strength/100:0),0)));
       const rawSell=Math.round(Math.min(100,details.reduce((a,x)=>a+(x.side==='SELL'?x.weight*x.strength/100:0),0)));
       const rawSide=rawBuy-rawSell>=8?'BUY':rawSell-rawBuy>=8?'SELL':null;
@@ -762,7 +776,7 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
        const m5Volume=calculateM5Volume(m5bars);
       const context=await marketContextForSymbol(id,rawSide,m5bars);
       let crtH4=null,crt={ready:false,stage:-1,status:'DATI H4 NON DISPONIBILI'},crtError='';
-      try{crtH4=await crtLastClosedH4(id,h1bars);crt=evaluateCRT(crtH4,m5bars);}
+      try{crtH4=await crtLastClosedH4(id,h1bars,m5bars);crt=evaluateCRT(crtH4,m5bars);}
       catch(crtErr){crtError=String(crtErr?.message||crtErr);console.warn('CRT H4',name,crtError)}
       const prior=app.results.get(name);
       let buy=rawBuy,sell=rawSell;
@@ -780,7 +794,7 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
        const setup=evaluateEntrySetupM5(rawSide,details,m5bars,m5Volume,
          {lateral,transition,extended,weakening});
        entryQuality=setup.score;
-      app.results.set(name,{name,id,details,m5bars,buy,sell,extended,weakening,confirmed,entryQuality,phase,lateral,transition,m5ClosedAt,m5Volume,setup,context,crtH4,crt,crtError,closeTimes,at:Date.now()});count++;
+      app.results.set(name,{name,id,details,m5bars,buy,sell,extended,weakening,confirmed,entryQuality,phase,lateral,transition,m5ClosedAt,m5Volume,setup,context,crtH4,crt,crtError,trendErrors,closeTimes,at:Date.now()});count++;
     }catch(err){console.warn('Trend',name,err);failed++;if(!firstError)firstError=name+': '+String(err?.message||err); /* conserva i risultati precedenti, se presenti */}
     render();$('counter').textContent=count+' mercati';await new Promise(r=>setTimeout(r,170));
   }
@@ -1065,7 +1079,26 @@ function reconstructH4FromH1(source,now=Date.now()){
  }
  return null;
 }
-async function crtLastClosedH4(id,h1source=[]){
+function reconstructH4FromM5(source,now=Date.now()){
+ const usable=(source||[]).filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
+  b.t+CRT_M5_MS<=now).sort((a,b)=>a.t-b.t);
+ const groups=new Map();
+ for(const b of usable){
+  const start=Math.floor(b.t/CRT_H4_MS)*CRT_H4_MS;
+  if(!groups.has(start))groups.set(start,[]);
+  groups.get(start).push(b);
+ }
+ const keys=[...groups.keys()].filter(t=>t+CRT_H4_MS<=now).sort((a,b)=>b-a);
+ for(const t of keys){
+  const bars=groups.get(t);
+  if(bars.length!==48||!bars.every((b,i)=>b.t===t+i*CRT_M5_MS))continue;
+  return {t,o:bars[0].o,h:Math.max(...bars.map(b=>b.h)),
+   l:Math.min(...bars.map(b=>b.l)),c:bars[47].c,
+   source:'48 M5 consecutive · UTC'};
+ }
+ return null;
+}
+async function crtLastClosedH4(id,h1source=[],m5source=[]){
  const now=Date.now(),bucket=Math.floor((now-90000)/CRT_H4_MS),cached=CRT_H4_CACHE.get(id);
  if(cached&&cached.bucket===bucket&&cached.h4)return cached.h4;
  let native=null,lastError='',attempts=0;
@@ -1093,13 +1126,13 @@ async function crtLastClosedH4(id,h1source=[]){
   CRT_H4_CACHE.set(id,{bucket,h4:native});
   return native;
  }
- const reconstruct=reconstructH4FromH1(h1source,now);
+ const reconstruct=reconstructH4FromH1(h1source,now)||reconstructH4FromM5(m5source,now);
  if(reconstruct){
   CRT_H4_CACHE.set(id,{bucket,h4:reconstruct});
   return reconstruct;
  }
  throw Error('H4 non disponibile: '+lastError+'; fallback 4 H1 consecutive non trovato ('+
-  h1source.length+' H1). Tentativi: '+attempts);
+  h1source.length+' H1 / '+m5source.length+' M5). Tentativi: '+attempts);
 }
 function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  const invalid={ready:false,status:'H4/M5 NON DISPONIBILI',stage:-1,side:null,progress:0,distance:Infinity,price:null};
