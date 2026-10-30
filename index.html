@@ -793,7 +793,7 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
        const m5Volume=calculateM5Volume(m5bars);
       const context=await marketContextForSymbol(id,rawSide,m5bars);
       let crtH4=null,crt={ready:false,stage:-1,status:'DATI H4 NON DISPONIBILI'},crtError='';
-      try{crtH4=await crtLastClosedH4(id,h1bars,m5bars);crt=evaluateCRT(crtH4,m5bars);}
+      try{crtH4=await crtLastClosedH4(id);crt=evaluateCRT(crtH4,m5bars);}
       catch(crtErr){crtError=String(crtErr?.message||crtErr);console.warn('CRT H4',name,crtError)}
       const prior=app.results.get(name);
       let buy=rawBuy,sell=rawSell;
@@ -1081,85 +1081,41 @@ let crtConfirmBars=2;
 try{const old=Number(localStorage.getItem(CRT_PREF_KEY));if(Number.isInteger(old)&&old>=2&&old<=6)crtConfirmBars=old;}catch{}
 const crtSelect=document.getElementById('crtConfirmCount');
 if(crtSelect)crtSelect.value=String(crtConfirmBars);
-/* H4 ufficiale: priorità al dato nativo del broker; fallback SOLO con 4 H1 chiuse e consecutive.
-   H4 UTC se ricostruita: l'ora del broker potrebbe avere un allineamento diverso. */
-function reconstructH4FromH1(source,now=Date.now()){
- const usable=(source||[]).filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
-  b.t+3600000<=now).sort((a,b)=>a.t-b.t);
- const groups=new Map();
- for(const b of usable){
-  const start=Math.floor(b.t/CRT_H4_MS)*CRT_H4_MS;
-  if(!groups.has(start))groups.set(start,[]);
-  groups.get(start).push(b);
- }
- const keys=[...groups.keys()].filter(t=>t+CRT_H4_MS<=now).sort((a,b)=>b-a);
- for(const t of keys){
-  const four=groups.get(t);
-  if(four.length!==4||!four.every((b,i)=>b.t===t+i*3600000))continue;
-  return {t,o:four[0].o,h:Math.max(...four.map(b=>b.h)),
-   l:Math.min(...four.map(b=>b.l)),c:four[3].c,source:'4 H1 consecutive · UTC'};
- }
- return null;
-}
-function reconstructH4FromM5(source,now=Date.now()){
- const usable=(source||[]).filter(b=>b&&[b.t,b.o,b.h,b.l,b.c].every(Number.isFinite)&&
-  b.t+CRT_M5_MS<=now).sort((a,b)=>a.t-b.t);
- const groups=new Map();
- for(const b of usable){
-  const start=Math.floor(b.t/CRT_H4_MS)*CRT_H4_MS;
-  if(!groups.has(start))groups.set(start,[]);
-  groups.get(start).push(b);
- }
- const keys=[...groups.keys()].filter(t=>t+CRT_H4_MS<=now).sort((a,b)=>b-a);
- for(const t of keys){
-  const bars=groups.get(t);
-  if(bars.length!==48||!bars.every((b,i)=>b.t===t+i*CRT_M5_MS))continue;
-  return {t,o:bars[0].o,h:Math.max(...bars.map(b=>b.h)),
-   l:Math.min(...bars.map(b=>b.l)),c:bars[47].c,
-   source:'48 M5 consecutive · UTC'};
- }
- return null;
-}
-async function crtLastClosedH4(id,h1source=[],m5source=[]){
- const now=Date.now(),bucket=Math.floor((now-90000)/CRT_H4_MS),cached=CRT_H4_CACHE.get(id);
- if(cached&&cached.bucket===bucket&&cached.h4)return cached.h4;
- let native=null,lastError='',attempts=0;
- const known=HTF_CONTEXT_CACHE.get(id+':10');
- if(known?.bars?.length){
-  const b=known.bars.filter(x=>x&&x.t+CRT_H4_MS<=now).at(-1);
-  if(b&&b.h>b.l&&b.t>0)native={...b,source:'H4 broker (cache)'};
- }
- if(!native){
-  for(const days of [7,21]){
-   attempts++;
-   try{
-    const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
-     symbolId:id,period:10,fromTimestamp:now-days*86400000,toTimestamp:now,
-     count:days===21?125:55,type:0
-    }).pipe(take(1),timeout({first:5500})));
-    const listH4=barsFromProto(res).filter(b=>b&&b.t>0&&b.t+CRT_H4_MS<=now&&b.h>b.l);
-    const latest=listH4.at(-1);
-    if(latest){native={...latest,source:'H4 broker'};break;}
-    lastError='H4: risposta senza candele chiuse ('+days+' giorni)';
-   }catch(err){lastError='H4 '+days+' giorni: '+String(err?.message||err);console.warn('CRT H4 API',id,lastError);}
-   // Se H4 ufficiale fallisce, non attendere altre chiamate se H1/M5 sono complete.
-   if(!native){
-    const backup=reconstructH4FromH1(h1source,now)||reconstructH4FromM5(m5source,now);
-    if(backup){CRT_H4_CACHE.set(id,{bucket,h4:backup});return backup;}
-   }
+/* Only broker-native H4 (ProtoTimeframe.H4=18) may authorize CRT.
+  Never substitute an aggregation that might differ from the broker's H4 session. */
+async function crtLastClosedH4(id){
+ const now=Date.now(),cached=CRT_H4_CACHE.get(id);
+ if(cached?.h4&&now-cached.fetchedAt<180000)return cached.h4;
+ const known=HTF_CONTEXT_CACHE.get(id+':'+PLUGIN_TF.H4);
+ if(known?.bars?.length&&now-(known.fetchedAt||0)<180000){
+  const bars=assertTrendbarCadence(known.bars,240,'H4');
+  const last=bars.filter(b=>b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now).at(-1);
+  if(last){
+   const h4={...last,source:'H4 broker · periodo 18'};
+   CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
+   return h4;
   }
  }
- if(native){
-  CRT_H4_CACHE.set(id,{bucket,h4:native});
-  return native;
+ let lastError='Nessun dato H4 dal broker';
+ for(const days of [7,21]){
+  try{
+   const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
+    symbolId:id,period:PLUGIN_TF.H4,fromTimestamp:now-days*86400000,
+    toTimestamp:now,count:days===21?125:55,type:0
+   }).pipe(take(1),timeout({first:6500})));
+   const bars=assertTrendbarCadence(barsFromProto(res),240,'H4')
+     .filter(b=>b&&b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now);
+   const last=bars.at(-1);
+   if(last){
+    const h4={...last,source:'H4 broker · periodo 18'};
+    CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
+    return h4;
+   }
+   lastError='Nessuna H4 chiusa disponibile ('+days+' giorni)';
+  }catch(err){lastError=String(err?.message||err);console.warn('CRT H4',id,lastError);}
  }
- const reconstruct=reconstructH4FromH1(h1source,now)||reconstructH4FromM5(m5source,now);
- if(reconstruct){
-  CRT_H4_CACHE.set(id,{bucket,h4:reconstruct});
-  return reconstruct;
- }
- throw Error('H4 non disponibile: '+lastError+'; fallback 4 H1 consecutive non trovato ('+
-  h1source.length+' H1 / '+m5source.length+' M5). Tentativi: '+attempts);
+ throw Error('CRT H4 non disponibile: '+lastError+
+  '. Per sicurezza non ricostruisco una H4 con candele di timeframe differenti.');
 }
 function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  const invalid={ready:false,status:'H4/M5 NON DISPONIBILI',stage:-1,side:null,progress:0,distance:Infinity,price:null};
