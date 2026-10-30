@@ -1287,13 +1287,20 @@ function preTradeAdvice(row,side){
  if(q<60)return {status:'ATTENDI CONFERMA',tone:'warn',body:phaseExplanation(phase,side)};
  return {status:'VALUTA CON DISCIPLINA',tone:'normal',body:phaseExplanation(phase,side)};
 }
-function warningForOrder(row,side){
+function warningForOrder(row,side,signalEngine){
+ if(signalEngine==='trend'){
+  const p=effectiveSetup(row);
+  if(p.status!=='INGRESSO CONFERMATO'||p.side!==side)
+   return 'TREND: conferma M5 NON VALIDA. Non operare.';
+  return 'TREND '+side+' · struttura, allineamento e conferma M5 verificati. '+
+   'Controlla ostacoli H4/D1, spread e notizie. Lo SL reale segue SL MAX € e non lo swing informativo.';
+ }
  const c=crtRankInfo(row);
  if(c.stage!==4||c.side!==side)
-  return 'CRT non valida, non operare. Mancano rientri M5 o il prezzo è fuori range.';
- return 'CRT '+side+' confermata sulla H4 e '+crtConfirmBars+
-  ' M5 con corpo interno. Ordine MARKET MANUALE; SL reale calcolato da SL MAX €, NON dallo swing CRT. '+
-  'Controlla spread, notizie e posizione attuale prima dell’invio.';
+  return 'CRT: conferma NON VALIDA. Non operare.';
+ return 'CRT '+side+' dopo rottura H4 e '+crtConfirmBars+
+  ' corpi M5 interni. SL reale determinato da SL MAX €, non dallo swing H4. '+
+  'Controlla spread, news e prezzo live nel range.';
 }
 // Verifica una opportunita' M5 nei due momenti critici: apertura ticket e invio.
 function assertConfirmedM5(row,expected){
@@ -2020,8 +2027,13 @@ async function submitMarketOrder(){
   if(typeof SDK.createNewOrder!=='function')throw Error('SDK trading non disponibile.');
   const row=app.results.get(chosen.name);
   if(!row||Number(row.id)!==Number(chosen.symbolId))throw Error('Simbolo cambiato: aggiorna la classifica.');
-  if(!chosen.crtGate)throw Error('CRT: ordine senza conferma valida.');
-  assertConfirmedCRT(row,chosen.crtGate,chosen.side);
+  if(chosen.signalEngine==='crt'){
+   if(!chosen.crtGate)throw Error('CRT: conferma mancante.');
+   assertConfirmedCRT(row,chosen.crtGate,chosen.side);
+  }else if(chosen.signalEngine==='trend'){
+   if(!chosen.trendGate)throw Error('TREND: conferma mancante.');
+   assertConfirmedTrend(row,chosen.trendGate,chosen.side);
+  }else throw Error('Motore trading sconosciuto: ordine bloccato.');
   checkRecentTradingHistory(row);
   const execution=await ensureExecutionQuote(chosen.symbolId,chosen.side);
   const q=execution.q;
@@ -2037,7 +2049,10 @@ async function submitMarketOrder(){
   if(!validSide(q,chosen.side))throw Error('Il prezzo LIVE non e\' più aggiornato.');
   if(Math.abs((chosen.side==='BUY'?q.ask:q.bid)-chosen.entry)>Math.max(chosen.priceDist*.25,0.0002))
    throw Error('Prezzo variato: riapri il ticket.');
-  assertConfirmedCRT(app.results.get(chosen.name),chosen.crtGate,chosen.side,q);
+  if(chosen.signalEngine==='crt')
+   assertConfirmedCRT(app.results.get(chosen.name),chosen.crtGate,chosen.side,q);
+  else
+   assertConfirmedTrend(app.results.get(chosen.name),chosen.trendGate,chosen.side);
   const ord=SDK.ServerInterfaces?.ProtoOrderType?.MARKET??1;
   const dir=SDK.ServerInterfaces?.ProtoTradeSide?.[chosen.side]??(chosen.side==='BUY'?1:2);
   clientOrderId='LMTM'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -2143,13 +2158,16 @@ function openSelectedChart(row){
  const buy=Number(row.buy)>Number(row.sell);
  const score=Math.max(Number(row.buy)||0,Number(row.sell)||0);
  const crt=crtRankInfo(row);
- $('details').textContent=row.name+' · CRT H4/M5 · '+crt.status+
-  '. MAX '+fmtStructurePrice(row.name,row.crtH4?.h)+
-  ' · MIN '+fmtStructurePrice(row.name,row.crtH4?.l)+
-  ' · '+(crt.stage===4?'SETUP CONFERMATO: '+crt.side+'.':'NESSUN INGRESSO AUTORIZZATO.');
+ $('details').textContent=isCRTView(app.rankingView)?
+  row.name+' · CRT H4/M5 · '+crt.status+
+   ' · MAX '+fmtStructurePrice(row.name,row.crtH4?.h)+
+   ' · MIN '+fmtStructurePrice(row.name,row.crtH4?.l)+
+   ' · '+(crt.stage===4?'CONFERMATO '+crt.side:'ATTENDI'):
+  row.name+' · TREND M5 · '+effectiveSetup(row).status+
+   ' · '+effectiveSetup(row).reason;
  const svg=$('trendChart'),modalSvg=$('chartModalSvg');
  modalSvg.innerHTML=svg?.innerHTML||'<text x="20" y="140" fill="#adbcd0">Storico non disponibile</text>';
- $('chartModalHeading').textContent='GRAFICO M5 + MAX/MIN ULTIMA H4 · '+row.name;
+ $('chartModalHeading').textContent=(isCRTView(app.rankingView)?'CRT H4/M5':'TREND M5')+' · '+row.name;
  const last=row.m5bars?.filter(b=>Date.now()>=b.t+300000).at(-1);
  $('chartModalNotice').textContent='Simbolo: '+row.name+' · ID broker: '+row.id+
   (last?' · Ultima candela: '+new Date(last.t+300000).toLocaleString('it-IT'):' · Dati non disponibili')+
@@ -2204,18 +2222,22 @@ document.addEventListener('click',async event=>{
   return;
  }
  const r=app.results.get(b.dataset.draft);if(!r)return;
- const signalRequired=b.dataset.crtRequired==='1';
- let signalGate=null;
- if(signalRequired){
-  try{signalGate=assertConfirmedCRT(r,null,b.dataset.side);}
-  catch(err){$('notice').textContent='ORDINE NON AVVIATO: '+String(err?.message||err);render();return;}
+ const signalEngine=b.dataset.signalEngine;
+ if(signalEngine!=='crt'&&signalEngine!=='trend'){
+  $('notice').textContent='Ordine privo del motore di conferma. Bloccato.';return;
  }
+ let signalGate;
+ try{
+  signalGate=signalEngine==='crt'?
+   assertConfirmedCRT(r,null,b.dataset.side):
+   assertConfirmedTrend(r,null,b.dataset.side);
+ }catch(err){$('notice').textContent='ORDINE NON AVVIATO: '+String(err?.message||err);render();return;}
  const article=b.closest('.market');const lot=Number(article.querySelector('.tradeLot').value),sl=Number(article.querySelector('.tradeSl').value),trail=article.querySelector('.tradeTrail').value;
  if(!(lot>0&&sl>0&&validTrails.includes(trail))){$('notice').textContent='LOT, SL o Trail non valido';return;}
  keepPref(r.name,'lot',lot);keepPref(r.name,'sl',sl);keepPref(r.name,'trail',trail);
  $('orderReviewUnlock').hidden=true;
  $('modalTitle').textContent='Controllo '+b.dataset.side+' · '+r.name;
- $('modalText').textContent='v10.8 CRT · 1/3 · Avvio controlli broker e quotazioni LIVE…';
+ $('modalText').textContent='v10.9 '+signalEngine.toUpperCase()+' · 1/3 · Avvio controlli broker e quotazioni LIVE…';
  $('orderFeedback').textContent='';$('orderConfirm').disabled=true;chosen=null;
  const requestId=++draftPreparationToken;
  app.draftBusy=true;
@@ -2228,19 +2250,26 @@ document.addEventListener('click',async event=>{
   const draft=await withDraftTimeout(
     buildOrderDraft(r.name,b.dataset.side,lot,sl,trail,progress),45000);
   if(requestId!==draftPreparationToken||!$('orderDialog').open)return;
-  if(signalRequired){
+  if(signalEngine==='crt'){
    assertConfirmedCRT(app.results.get(r.name),signalGate,b.dataset.side,{bid:draft.entry,ask:draft.entry});
    draft.crtGate=signalGate;
+  }else{
+   assertConfirmedTrend(app.results.get(r.name),signalGate,b.dataset.side);
+   draft.trendGate=signalGate;
   }
+  draft.signalEngine=signalEngine;
   chosen=draft;
   prepareCbotAck(draft.engine);
-  const phaseNote=warningForOrder(r,b.dataset.side);
+  const phaseNote=warningForOrder(r,b.dataset.side,signalEngine);
   const quoteNotice=draft.quotePartial?
     '<p class="cloudOrderWarn"><b>ATTENZIONE: SPREAD NON VERIFICATO</b>. Il broker non ha fornito entrambi i prezzi. '+
     'Per '+e(draft.side)+' il lato di esecuzione e\' LIVE, ma lo spread non e\' misurabile. '+
     'La perdita reale puo\' superare quella stimata per spread, slippage, gap e costi. '+
     'Per procedere serve una SECONDA conferma esplicita nel popup.</p>':'';
-  const signalInfo=signalRequired?`<p class="cloudOrderWarn"><b>CRT H4/M5 CONFERMATA · ${e(signalGate.side)}</b> · ${crtConfirmBars} corpi M5 dentro il range · conferma ${e(new Date(signalGate.confirmedAt).toLocaleTimeString('it-IT'))}. Solo sulla terza M5 e con prezzo live dentro H4. Ricontrollo prima dell'invio.</p>`:'';
+  const signalInfo=signalEngine==='crt'?
+   `<p class="cloudOrderWarn"><b>MOTORE CRT · ${e(signalGate.side)} CONFERMATO</b> · ${crtConfirmBars} rientri M5 nel range H4 · ora ${e(new Date(signalGate.confirmedAt).toLocaleTimeString('it-IT'))}. Prima dell'invio: ricontrollo prezzo live dentro H4.</p>`:
+   `<p class="cloudOrderWarn"><b>MOTORE TREND · ${e(signalGate.side)} CONFERMATO</b> · M5 con struttura, direzione e volumi validati · chiusura ${e(new Date(signalGate.closedAt).toLocaleTimeString('it-IT'))}. Nessuna dipendenza dalla CRT.</p>`;
+
   $('modalText').innerHTML=`${signalInfo}${quoteNotice}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · SL MAX ${draft.slEuro.toFixed(2)} € (budget stimato).</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
   $('orderConfirm').disabled=draft.engine==='cbot';
  }catch(err){
@@ -2256,14 +2285,14 @@ document.addEventListener('click',async event=>{
  }
 });
 const filterToggle=$('minScoreToggle'),filterMenu=$('minScoreMenu');
-document.querySelector('.rankingTabs').addEventListener('click',event=>{
+document.querySelectorAll('.rankingTabs').forEach(group=>group.addEventListener('click',event=>{
  const btn=event.target.closest('[data-rank-view]');if(!btn)return;
  const target=btn.dataset.rankView;
- if(!['crt','trends','buy','sell','signals'].includes(target))return;
+ if(!['crt','crt-near','crt-ready','trends','buy','sell','signals'].includes(target))return;
  app.rankingView=target;
  app.selected=null;
  render();
-});
+}));
 filterToggle.addEventListener('click',()=>{
  const open=filterMenu.hidden;
  filterMenu.hidden=!open;filterToggle.setAttribute('aria-expanded',String(open));
