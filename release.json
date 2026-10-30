@@ -1,5 +1,5 @@
 {
-  "version": "10.8",
-  "build": 108,
-  "description": "CRT STRICT: solo rottura H4 e 2–6 M5 consecutive con corpo nel range. Classifica solo CRT; pulsanti BUY/SELL abilitati esclusivamente nella M5 successiva e con prezzo live nel range. Trailing invariato."
+  "version": "10.9",
+  "build": 109,
+  "description": "Doppio motore indipendente: CRT H4/M5 con vicinanza al massimo/minimo, rottura/rientri e conferme; TREND multi-timeframe con proprie conferme M5. Ripristino H4 da broker e, solo se fallisce, ricostruzione esatta da H1/M5. Trailing selezionabile per simbolo invariato."
 }
