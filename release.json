@@ -1,5 +1,5 @@
 {
-  "version": "10.7",
-  "build": 107,
-  "description": "Scanner CRT ultima H4 chiusa, 2-6 corpi M5 nel range, classifica per fase/vicinanza, linee su grafico interno; trailing e trading manuale invariati"
+  "version": "10.8",
+  "build": 108,
+  "description": "CRT STRICT: solo rottura H4 e 2–6 M5 consecutive con corpo nel range. Classifica solo CRT; pulsanti BUY/SELL abilitati esclusivamente nella M5 successiva e con prezzo live nel range. Trailing invariato."
 }
