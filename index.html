@@ -1114,7 +1114,7 @@ function crtPanelHTML(row){
  const sideText=c.side==='SELL'?'SELL se rientra sotto il massimo':'BUY se rientra sopra il minimo';
  const time=Number.isFinite(h.t)?new Date(h.t+CRT_H4_MS).toLocaleString('it-IT'):'N/D';
  const status=String(c.status||'ATTENDI');
- const warn=c.stage===4?'Due corpi M5 rientrati: sulla successiva M5 valutare ingresso MANUALE, previo controllo prezzo e rischio.':
+ const warn=c.stage===4?crtConfirmBars+' corpi M5 rientrati: sulla candela M5 successiva valutare ingresso MANUALE, previo controllo prezzo e rischio.':
   c.stage===3?'Mancano '+Math.max(0,crtConfirmBars-c.progress)+' candele M5 consecutive con corpo interno.':
   c.stage===2?'Rottura rilevata: attendi i corpi M5 di rientro.':
   c.stage===1?'Prezzo vicino al livello, MA nessuna rottura/rientro confermati.':
@@ -1126,7 +1126,7 @@ function crtPanelHTML(row){
   (Number.isFinite(lvl)?' · livello osservato '+e(fmtStructurePrice(row.name,lvl)):'')+
   '</div><div class="crtStatus">'+e(warn)+'</div><div class="crtNote">'+e(sideText)+
   '. Livelli sul grafico INTERNO della MobileApp, non sul grafico nativo cTrader. '+
-  'BUY/SELL sono ordini MARKET manuali; SL MAX € e trailing continuano a usare le impostazioni esistenti.</div></div>';
+  'BUY/SELL attivi solo con CRT CONFERMATA; SL MAX € e trailing conservano le impostazioni esistenti.</div></div>';
 }
 document.addEventListener('change',evt=>{
  if(evt.target?.id!=='crtConfirmCount')return;
@@ -1196,10 +1196,12 @@ function preTradeAdvice(row,side){
  return {status:'VALUTA CON DISCIPLINA',tone:'normal',body:phaseExplanation(phase,side)};
 }
 function warningForOrder(row,side){
- const inferred=Number(row.buy)>Number(row.sell)?'BUY':Number(row.sell)>Number(row.buy)?'SELL':null;
- const contrary=inferred&&side!==inferred?'ATTENZIONE: operazione contro la direzione segnalata. ':'';
- const advice=adviceWithVolume(row,inferred||side);
- return contrary+advice.status+'. '+advice.body+' Prima di confermare controlla spread, notizie, lotto e stop loss. Il comando invia un ordine MARKET manuale e NON usa automaticamente SL/TP strutturali teorici: lo stop reale segue SL MAX €.';
+ const c=crtRankInfo(row);
+ if(c.stage!==4||c.side!==side)
+  return 'CRT non valida, non operare. Mancano rientri M5 o il prezzo è fuori range.';
+ return 'CRT '+side+' confermata sulla H4 e '+crtConfirmBars+
+  ' M5 con corpo interno. Ordine MARKET MANUALE; SL reale calcolato da SL MAX €, NON dallo swing CRT. '+
+  'Controlla spread, notizie e posizione attuale prima dell’invio.';
 }
 // Verifica una opportunita' M5 nei due momenti critici: apertura ticket e invio.
 function assertConfirmedM5(row,expected){
@@ -1275,7 +1277,10 @@ function render(){
    '<span class="score '+(side==='BUY'?'up':side==='SELL'?'down':'')+'">'+e(stage)+
    '<small>FASE CRT · NON È UN PUNTEGGIO</small></span></div>'+
    '<div class="meta"><span class="'+(side==='BUY'?'up':side==='SELL'?'down':'')+'">'+
-   (side==='BUY'?'▲ POSSIBILE BUY':side==='SELL'?'▼ POSSIBILE SELL':'→ IN ATTESA')+
+   (c.stage===4?(side==='BUY'?'▲ BUY CRT CONFERMATO':'▼ SELL CRT CONFERMATO'):
+    c.stage===3?'RIENTRO · '+(side==='BUY'?'MIN H4':'MAX H4'):
+    c.stage===2?'ROTTURA · '+(side==='BUY'?'MIN H4':'MAX H4'):
+    c.stage===1?'VICINO · '+(side==='BUY'?'MIN H4':'MAX H4'):'→ IN ATTESA')+
    '</span><span class="phaseTag">'+e(c.status||'NON DISPONIBILE')+'</span>'+
    '<span class="spreadTag" data-spread-id="'+Number(r.id)+'" data-grade="NON DISPONIBILE">SPREAD: IN ATTESA</span></div>'+
    crtPanelHTML(r)+marketTradeControlsHTML(r,p,view)+'</article>';
@@ -2007,9 +2012,11 @@ function openSelectedChart(row){
  drawTrendChart(row);
  const buy=Number(row.buy)>Number(row.sell);
  const score=Math.max(Number(row.buy)||0,Number(row.sell)||0);
- $('details').textContent=row.name+' · '+(buy?'BUY ▲ ':'SELL ▼ ')+
-  'Forza '+score+'/100 · Ingresso '+(row.entryQuality??0)+'/100 · Fase '+
-  (row.phase||'—')+'. Consiglio: '+preTradeAdvice(row,buy?'BUY':'SELL').body;
+ const crt=crtRankInfo(row);
+ $('details').textContent=row.name+' · CRT H4/M5 · '+crt.status+
+  '. MAX '+fmtStructurePrice(row.name,row.crtH4?.h)+
+  ' · MIN '+fmtStructurePrice(row.name,row.crtH4?.l)+
+  ' · '+(crt.stage===4?'SETUP CONFERMATO: '+crt.side+'.':'NESSUN INGRESSO AUTORIZZATO.');
  const svg=$('trendChart'),modalSvg=$('chartModalSvg');
  modalSvg.innerHTML=svg?.innerHTML||'<text x="20" y="140" fill="#adbcd0">Storico non disponibile</text>';
  $('chartModalHeading').textContent='GRAFICO M5 + MAX/MIN ULTIMA H4 · '+row.name;
