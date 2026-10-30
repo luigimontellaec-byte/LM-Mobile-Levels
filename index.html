@@ -529,7 +529,12 @@ function startAutoRefreshM5(){
  setInterval(()=>{
   reportAutoRefresh();
   autoRefreshM5();
-  if((app.rankingView==='signals'||app.rankingView==='crt')&&!app.busy&&app.visibleSignalsSignature!==visibleSignalSignature())render();
+  if(!app.busy&&document.visibilityState!=='hidden'){
+   const editing=document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]');
+   if(!editing&&(isCRTView(app.rankingView)||
+    (app.rankingView==='signals'&&app.visibleSignalsSignature!==visibleSignalSignature())))
+     render();
+  }
  },AUTO_INTERVAL_MS);
  document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'){reportAutoRefresh();autoRefreshM5()}
@@ -791,12 +796,12 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
 
 function drawTrendChart(row){
   const svg=$('trendChart');if(!svg)return;
-  $('graphSymbol').textContent=row?.name||'Nessun simbolo';
+  $('graphSymbol').textContent=(row?.name||'Nessun simbolo')+' · '+(isCRTView(app.rankingView)?'CRT':'TREND');
   const end=Date.now();
   const bars=(row?.m5bars||[]).filter(c=>end>=c.t+5*60000).slice(-58);
   if(bars.length<25){svg.innerHTML='<text x="20" y="155" fill="#91a0b4" font-size="14">Grafico disponibile dopo la scansione M5</text>';return}
   let lo=Math.min(...bars.map(b=>b.l)),hi=Math.max(...bars.map(b=>b.h));
-  const crtH=row?.crtH4;
+  const crtH=isCRTView(app.rankingView)?row?.crtH4:null;
   if(crtH&&Number.isFinite(crtH.h)&&Number.isFinite(crtH.l)&&crtH.h>crtH.l){
    lo=Math.min(lo,crtH.l);hi=Math.max(hi,crtH.h);
   }
@@ -812,7 +817,7 @@ function drawTrendChart(row){
     '<text x="530" y="'+(y(z[0])-6)+'" fill="'+z[2]+'" font-size="10" font-weight="900">'+
     z[1]+' '+e(fmtStructurePrice(row.name,z[0]))+'</text>').join(''):'';
   svg.innerHTML=grid+crtLines+candles+'<text x="28" y="19" fill="#f1c86e" font-weight="700" font-size="12">'+
-   e(row.name)+' · M5 / LIVELLI H4</text>';
+   e(row.name)+(isCRTView(app.rankingView)?' · CRT MAX/MIN H4':' · TREND M5')+'</text>';
 }
 
 const tradePrefs=new Map();
@@ -1489,21 +1494,34 @@ async function prewarmEURUSD(){
 }
 async function subscribeRankSpreads(){
  if(!app.connected||typeof SDK.subscribeQuotes!=='function')return;
- const ids=[...app.results.values()].filter(r=>!isCryptoMarket(r.name))
- .map(r=>{const buy=Number(r.buy)||0,sell=Number(r.sell)||0;
-    return {r,side:buy-sell>=8?'BUY':sell-buy>=8?'SELL':null,score:Math.max(buy,sell)};})
- .filter(x=>x.side && x.score>=Math.max(1,Number(app.minScore)||0))
- .sort((a,b)=>b.score-a.score).slice(0,10).map(x=>Number(x.r.id))
- .filter(id=>Number.isFinite(id)&&!app.subscriptions.has(id)&&!app.spreadPending.has(id));
- if(!ids.length)return;
- ids.forEach(id=>app.spreadPending.add(id));
- try{
-  await firstValueFrom(SDK.subscribeQuotes(app.adapter,{symbolId:ids,subscribeToSpotTimestamp:true})
-   .pipe(take(1),timeout({first:12000})));
-  ids.forEach(id=>app.subscriptions.add(id));
- }catch(err){console.warn('Quote spread non disponibili',err)}
- finally{ids.forEach(id=>app.spreadPending.delete(id));refreshSpreadBadges()}
+ // Quote per CRT e TREND: entrambe le classifiche hanno prezzi indipendenti.
+ const all=[...app.results.values()].filter(r=>!isCryptoMarket(r.name));
+ const crtTop=all.map(r=>({r,c:crtRankInfo(r)}))
+  .filter(x=>x.c.ready).sort((a,b)=>(b.c.stage-a.c.stage)||
+   a.c.distance-b.c.distance).slice(0,15).map(x=>x.r);
+ const trendTop=all.map(r=>({r,score:Math.max(Number(r.buy)||0,Number(r.sell)||0)}))
+  .sort((a,b)=>b.score-a.score).slice(0,10).map(x=>x.r);
+ const seen=new Set(),ids=[];
+ for(const r of [...crtTop,...trendTop]){
+  const id=Number(r.id);
+  if(Number.isSafeInteger(id)&&!seen.has(id)&&!app.subscriptions.has(id)&&!app.spreadPending.has(id)){
+   seen.add(id);ids.push(id);
+  }
+ }
+ for(let i=0;i<ids.length;i+=8){
+  const block=ids.slice(i,i+8);
+  block.forEach(id=>app.spreadPending.add(id));
+  try{
+   await firstValueFrom(SDK.subscribeQuotes(app.adapter,{
+    symbolId:block,subscribeToSpotTimestamp:true
+   }).pipe(take(1),timeout({first:12000})));
+   block.forEach(id=>app.subscriptions.add(id));
+  }catch(err){console.warn('Quote ranking CRT/TREND non disponibili',err)}
+  finally{block.forEach(id=>app.spreadPending.delete(id))}
+ }
+ refreshSpreadBadges();
 }
+
 setInterval(refreshSpreadBadges,5000);
 let chosen=null;
 // cTrader SpotEvent puo' contenere solo BID oppure solo ASK.
@@ -2374,7 +2392,11 @@ async function connect(){try{if(typeof SDK.registerEvent!=='function'||typeof co
       if(!app.busy)render(); // Rimuove immediatamente il segnale se il prezzo esce dal range.
      }
     }
-    if(now-autoLastUiAt>5000){autoLastUiAt=now;reportAutoRefresh();}
+    if(now-autoLastUiAt>5000){
+     autoLastUiAt=now;reportAutoRefresh();
+     if(!app.busy&&isCRTView(app.rankingView)&&
+       !document.activeElement?.matches?.('input,select,textarea'))render();
+    }
    },
    error:err=>{
     console.warn('Quote cTrader interrotte:',err);
