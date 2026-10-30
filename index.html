@@ -791,8 +791,13 @@ async function scan(){if(!app.connected||app.busy)return;for(const name of app.r
         }
       }
       if(!rawSide){buy=0;sell=0;extended=false;weakening=false;confirmed=false;entryQuality=0;phase='LATERALE';lateral=true;transition=false;}
-       const setup=evaluateEntrySetupM5(rawSide,details,m5bars,m5Volume,
+       let setup=evaluateEntrySetupM5(rawSide,details,m5bars,m5Volume,
          {lateral,transition,extended,weakening});
+       if(trendErrors.length){
+        setup={...setup,side:null,status:'ATTENDI',
+         reason:'Dati TREND insufficienti: '+trendErrors.join(' · '),
+         score:0,confirmed:false,closedAt:0};
+       }
        entryQuality=setup.score;
       app.results.set(name,{name,id,details,m5bars,buy,sell,extended,weakening,confirmed,entryQuality,phase,lateral,transition,m5ClosedAt,m5Volume,setup,context,crtH4,crt,crtError,trendErrors,closeTimes,at:Date.now()});count++;
     }catch(err){console.warn('Trend',name,err);failed++;if(!firstError)firstError=name+': '+String(err?.message||err); /* conserva i risultati precedenti, se presenti */}
@@ -1292,9 +1297,9 @@ function setupPanelHTML(row){
  if(Number.isFinite(plan.entry)&&Number.isFinite(plan.stop))
   levels='<div class="setupLevels">RIF. M5 '+e(fmtStructurePrice(row.name,plan.entry))+
     ' · STOP SWING indicativo '+e(fmtStructurePrice(row.name,plan.stop))+'</div>';
- return '<div class="setupBox '+tone+'"><div class="setupHead">INGRESSO M5 · '+
+ return '<div class="setupBox '+tone+'"><div class="setupHead">TREND · INGRESSO M5 · '+
   e(plan.status)+'</div><div class="setupReason">'+e(plan.reason)+'</div>'+contextHtml+levels+
-  '<div class="setupDisclaimer">Analisi intraday senza target minimo. Livelli teorici su M5 chiuse; BUY/SELL restano MARKET manuali con SL € configurato, NON lo stop swing indicativo.</div></div>';
+  '<div class="setupDisclaimer">TREND indipendente da CRT. Tick volume M5 '+e(row.m5Volume?.text||'N/D')+'. Apertura manuale solo su conferma M5; SL reale segue SL MAX €, non lo stop swing indicativo.</div></div>';
 }
 function adviceWithVolume(row,side){
  const plan=effectiveSetup(row);
