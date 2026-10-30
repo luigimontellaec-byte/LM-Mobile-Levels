@@ -1,5 +1,5 @@
 {
-  "version": "10.9",
-  "build": 109,
-  "description": "Doppio motore indipendente: CRT H4/M5 con vicinanza al massimo/minimo, rottura/rientri e conferme; TREND multi-timeframe con proprie conferme M5. Ripristino H4 da broker e, solo se fallisce, ricostruzione esatta da H1/M5. Trailing selezionabile per simbolo invariato."
+  "version": "11.0",
+  "build": 110,
+  "description": "Fix critico timeframe cTrader WebView Plugin: M15=11, M30=13, H1=15, H4=18, D1=22 (ProtoTimeframe). Eliminati falsi breakout CRT da M10 scambiata per H4 e conferme trend calcolate su timeframe errati. Solo H4 nativa del broker per CRT, validazione temporale dei dati e visualizzazione apertura/chiusura H4; doppio motore e trailing invariati."
 }
