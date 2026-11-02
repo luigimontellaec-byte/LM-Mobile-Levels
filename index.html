@@ -1346,7 +1346,7 @@ function crtPanelHTML(row){
   (Number.isFinite(lvl)?' · livello osservato '+e(fmtStructurePrice(row.name,lvl)):'')+
   '</div><div class="crtStatus">'+e(warn)+'</div><div class="crtNote">'+e(sideText)+
   '. Livelli sul grafico INTERNO della MobileApp, non sul grafico nativo cTrader. '+
-  'BUY/SELL attivi solo con CRT CONFERMATA; SL MAX € e trailing conservano le impostazioni esistenti.</div></div>';
+  'BUY/SELL attivi solo con CRT CONFERMATA; SL EUR/STR e trailing conservano le impostazioni esistenti.</div></div>';
 }
 // CRT M5 choice is handled by the mobile-safe confirmation dialog above.
 
@@ -1437,7 +1437,7 @@ function warningForOrder(row,side,signalEngine){
  if(c.stage!==4||c.side!==side)
   return 'CRT: conferma NON VALIDA. Non operare.';
  return 'CRT '+side+' dopo rottura H4 e '+crtConfirmBars+
-  ' corpi M5 interni. SL reale determinato da SL MAX €, non dallo swing H4. '+
+  ' corpi M5 interni. SL selezionabile in euro o strutturale oltre la rottura M5 con buffer in pips broker. '+
   'Controlla spread, news e prezzo live nel range.';
 }
 // Verifica una opportunita' M5 nei due momenti critici: apertura ticket e invio.
@@ -2134,7 +2134,7 @@ function checkBrokerTradingMode(info,name){
  if(v===2)throw Error(name+': broker non consente nuovi ordini; possibili soltanto esecuzioni di pendenti gia presenti (tradingMode 2).');
  if(v===3)throw Error(name+': broker consente SOLO CHIUSURE, non nuove posizioni (tradingMode 3).');
 }
-async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{}){
+async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMode='EUR',bufferPips=3){
  const progress=label=>{try{onProgress(label)}catch{}};
  if(!app.connected)throw Error('Apri la MobileApp dentro cTrader');
  const row=app.results.get(name);
@@ -2158,7 +2158,7 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{}){
  if(side==='SELL'&&field(info,['enableShortSelling'])===false)
    throw Error('SELL non consentito dal broker per il simbolo.');
  const quote=resolveQuoteCurrency(name,row.id,info,app.symbols);
- progress('2/3 · Calcolo SL €: servono quotazioni di EUR'+quote.currency+
+ progress('2/3 · Calcolo SL '+(slMode==='STR'?'strutturale e rischio indicativo':'in euro')+': cambio EUR'+quote.currency+
    (quote.currency==='EUR'?' (nessun cambio richiesto)':' o coppia inversa')+'…');
  const conversion=await eurToQuote(quote.currency).catch(err=>{
    throw Error('CAMBIO per SL € di '+name+': '+String(err?.message||err));
@@ -2171,9 +2171,23 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{}){
  const entry=side==='BUY'?q.ask:q.bid;
  const native=nativeTrailProfile(trail);
  const budget=slEuro*(trailEngine==='cbot'?1:native.fraction);
- const calc=calculateBrokerSL(info,volume,budget,conversion,entry,side);
+ if(!['EUR','STR'].includes(slMode))throw Error('Tipo SL non valido.');
+ let calc;
+ if(slMode==='STR'){
+  const confirmation=crtRankInfo(row);
+  if(confirmation.stage!==4||confirmation.side!==side)
+   throw Error('SL STR utilizzabile solo con CRT confermata.');
+  if(!(Number.isFinite(confirmation.breakoutExtreme)&&confirmation.breakoutExtreme>0))
+   throw Error('SL STR: mancano gli estremi delle candele M5 di rottura.');
+  calc=calculateStructuralBrokerSL(info,volume,confirmation.breakoutExtreme,bufferPips,conversion,entry,side);
+ }else calc=calculateBrokerSL(info,volume,budget,conversion,entry,side);
  const tag={Stretto:'ST',Normale:'NO',Lungo:'LU',OFF:'OFF'}[trail];
- return {name,side,lot,slEuro,trail,tag,symbolId:row.id,volume,
+ return {name,side,lot,slEuro,slMode,bufferPips,trail,tag,symbolId:row.id,volume,
+   stopMeta:{digits:field(info,['digits']),tickSize:field(info,['tickSize']),
+    pipPosition:field(info,['pipPosition']),slDistance:field(info,['slDistance']),
+    distanceSetIn:field(info,['distanceSetIn'])},
+   structuralExtreme:slMode==='STR'?calc.breakoutExtreme:null,
+   structuralStopTarget:slMode==='STR'?calc.structuralTarget:null,
    relativeUnits:calc.relativeUnits,priceDist:calc.priceDist,slPrice:calc.slPrice,entry,digits:calc.digits,
    units:calc.units,tick:calc.tick,accountCurrency:cur,fxRate:conversion,quoteCurrency:quote.currency,contractQuoteSource:quote.source,
    spreadInfo:spreadInfo.text,quotePartial:execution.partial===true,
@@ -2294,9 +2308,22 @@ async function submitMarketOrder(){
   if(execution.partial&&!quotePartialAck)
    throw Error('Devi confermare manualmente che accetti lo spread non verificato.');
   const conversion=await eurToQuote(chosen.quoteCurrency);
+  if(chosen.slMode==='STR'){
+   const liveEntry=chosen.side==='BUY'?q.ask:q.bid;
+   const updated=calculateStructuralBrokerSL(chosen.stopMeta,chosen.volume,
+    chosen.structuralExtreme,chosen.bufferPips,conversion,liveEntry,chosen.side);
+   if(Math.abs(updated.structuralTarget-chosen.structuralStopTarget)>chosen.tick*.01)
+    throw Error('SL STR cambiato: riapri il ticket prima di operare.');
+   if(updated.effectiveRiskEuro>chosen.effectiveRiskEuro*1.25+0.01)
+    throw Error('Rischio strutturale aumentato rispetto al ticket: riapri per confermare.');
+   chosen.relativeUnits=updated.relativeUnits;
+   chosen.priceDist=updated.priceDist;
+   chosen.slPrice=updated.slPrice;
+  }
   const risk=chosen.units*chosen.priceDist/conversion;
-  if(!(risk>0&&risk<=chosen.slEuro*1.01))
-   throw Error('Rischio stimato superiore allo SL MAX €, ricontrolla il cambio e riapri il ticket.');
+  if(!(risk>0)||chosen.slMode!=='STR'&&risk>chosen.slEuro*1.01)
+   throw Error(chosen.slMode==='STR'?'Rischio strutturale non calcolabile.':
+    'Rischio stimato superiore allo SL MAX €, ricontrolla il cambio e riapri il ticket.');
   const spread=execution.partial?{grade:'NON VERIFICATO'}:spreadAssessment(chosen.name,q);
   if(!validSide(q,chosen.side))throw Error('Il prezzo LIVE non e\' più aggiornato.');
   if(Math.abs((chosen.side==='BUY'?q.ask:q.bid)-chosen.entry)>Math.max(chosen.priceDist*.25,0.0002))
@@ -2484,9 +2511,19 @@ document.addEventListener('click',async event=>{
    assertConfirmedCRT(r,null,b.dataset.side):
    assertConfirmedTrend(r,null,b.dataset.side);
  }catch(err){$('notice').textContent='ORDINE NON AVVIATO: '+String(err?.message||err);render();return;}
- const article=b.closest('.market');const lot=Number(article.querySelector('.tradeLot').value),sl=Number(article.querySelector('.tradeSl').value),trail=article.querySelector('.tradeTrail').value;
- if(!(lot>0&&sl>0&&validTrails.includes(trail))){$('notice').textContent='LOT, SL o Trail non valido';return;}
- keepPref(r.name,'lot',lot);keepPref(r.name,'sl',sl);keepPref(r.name,'trail',trail);
+ const article=b.closest('.market');
+ const lot=Number(article.querySelector('.tradeLot').value);
+ const sl=Number(article.querySelector('.tradeSl').value);
+ const trail=article.querySelector('.tradeTrail').value;
+ const slMode=signalEngine==='crt'?article.querySelector('.tradeSlMode')?.value||'EUR':'EUR';
+ const bufferPips=slMode==='STR'?Number(article.querySelector('.tradeSlBuffer').value):3;
+ if(!(lot>0&&validTrails.includes(trail)&&['EUR','STR'].includes(slMode)&&
+      (slMode==='EUR'?sl>0:bufferPips>0&&bufferPips<=50))){
+  $('notice').textContent='LOT, tipo SL, buffer o Trail non valido';return;
+ }
+ keepPref(r.name,'lot',lot);keepPref(r.name,'sl',sl);
+ keepPref(r.name,'slMode',slMode);keepPref(r.name,'bufferPips',bufferPips);
+ keepPref(r.name,'trail',trail);
  $('orderReviewUnlock').hidden=true;
  $('modalTitle').textContent='Controllo '+b.dataset.side+' · '+r.name;
  $('modalText').textContent='v10.9 '+signalEngine.toUpperCase()+' · 1/3 · Avvio controlli broker e quotazioni LIVE…';
@@ -2500,7 +2537,7 @@ document.addEventListener('click',async event=>{
     $('modalText').textContent=message;
   };
   const draft=await withDraftTimeout(
-    buildOrderDraft(r.name,b.dataset.side,lot,sl,trail,progress),45000);
+    buildOrderDraft(r.name,b.dataset.side,lot,sl,trail,progress,slMode,bufferPips),45000);
   if(requestId!==draftPreparationToken||!$('orderDialog').open)return;
   if(signalEngine==='crt'){
    assertConfirmedCRT(app.results.get(r.name),signalGate,b.dataset.side,{bid:draft.entry,ask:draft.entry});
@@ -2522,7 +2559,7 @@ document.addEventListener('click',async event=>{
    `<p class="cloudOrderWarn"><b>MOTORE CRT · ${e(signalGate.side)} CONFERMATO</b> · ${crtConfirmBars} rientri M5 nel range H4 · ora ${e(new Date(signalGate.confirmedAt).toLocaleTimeString('it-IT'))}. Prima dell'invio: ricontrollo prezzo live dentro H4.</p>`:
    `<p class="cloudOrderWarn"><b>MOTORE TREND · ${e(signalGate.side)} CONFERMATO</b> · M5 con struttura, direzione e volumi validati · chiusura ${e(new Date(signalGate.closedAt).toLocaleTimeString('it-IT'))}. Nessuna dipendenza dalla CRT.</p>`;
 
-  $('modalText').innerHTML=`${signalInfo}${quoteNotice}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · SL MAX ${draft.slEuro.toFixed(2)} € (budget stimato).</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
+  $('modalText').innerHTML=`${signalInfo}${quoteNotice}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · ${draft.slMode==='STR'?'SL STR + '+draft.bufferPips+' pips':'SL MAX '+draft.slEuro.toFixed(2)+' € (budget stimato)'}.</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
   $('orderConfirm').disabled=draft.engine==='cbot';
  }catch(err){
   if(requestId===draftPreparationToken&&$('orderDialog').open){
