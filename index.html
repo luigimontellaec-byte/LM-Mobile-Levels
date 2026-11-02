@@ -927,9 +927,12 @@ function prefKey(symbol){return 'lmtrendmarkets:v62:'+symbol.replace(/[^A-Za-z0-
 function prefsFor(symbol){
   if(tradePrefs.has(symbol))return tradePrefs.get(symbol);
   let stored=null;try{stored=JSON.parse(localStorage.getItem(prefKey(symbol))||'null')}catch{}
-  const def={lot:Number($('globalLot').value)||0.01,sl:Number($('globalSl').value)||10,trail:$('globalTrail').value||'Stretto'};
+  const def={lot:Number($('globalLot').value)||0.01,sl:Number($('globalSl').value)||10,
+    slMode:'EUR',bufferPips:3,trail:$('globalTrail').value||'Stretto'};
   const pref={lot:Number.isFinite(Number(stored?.lot))&&Number(stored.lot)>0?Number(stored.lot):def.lot,
     sl:Number.isFinite(Number(stored?.sl))&&Number(stored.sl)>0?Number(stored.sl):def.sl,
+    slMode:stored?.slMode==='STR'?'STR':'EUR',
+    bufferPips:Number.isFinite(Number(stored?.bufferPips))&&Number(stored.bufferPips)>0&&Number(stored.bufferPips)<=50?Number(stored.bufferPips):def.bufferPips,
     trail:validTrails.includes(stored?.trail)?stored.trail:def.trail};
   tradePrefs.set(symbol,pref);return pref;
 }
@@ -1217,24 +1220,28 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
   distance:Infinity,progress:0,status:'H4 OK · ATTESA PRIME M5',at:now};
  const live=now-(latest.t+CRT_M5_MS)<=12*60000&&now>=latest.t+CRT_M5_MS;
  const nearHigh=Math.abs(price-high),nearLow=Math.abs(price-low);
- let side=null,progress=0,breakoutAt=0,complete=null,lastInsideAt=0;
+ let side=null,progress=0,breakoutAt=0,breakoutExtreme=NaN,complete=null,lastInsideAt=0;
  for(const b of closed){
   const crossHigh=b.h>high,crossLow=b.l<low;
   const inside=b.o>=low&&b.o<=high&&b.c>=low&&b.c<=high;
-  if(crossHigh&&crossLow){side=null;progress=0;breakoutAt=0;lastInsideAt=0;continue;}
+  if(crossHigh&&crossLow){side=null;progress=0;breakoutAt=0;breakoutExtreme=NaN;lastInsideAt=0;continue;}
   const freshBreak=!side&&(crossHigh||crossLow);
   const reverseBreak=(side==='SELL'&&crossLow)||(side==='BUY'&&crossHigh);
   if(freshBreak||reverseBreak){
-   side=crossHigh?'SELL':'BUY';progress=0;lastInsideAt=0;breakoutAt=b.t+CRT_M5_MS;continue;
+   side=crossHigh?'SELL':'BUY';progress=0;lastInsideAt=0;breakoutAt=b.t+CRT_M5_MS;
+   breakoutExtreme=side==='SELL'?b.h:b.l;continue;
   }
   if(side){
+   // Estremo effettivo delle M5 che hanno rotto il bordo H4.
+   if(side==='SELL'&&crossHigh)breakoutExtreme=Math.max(breakoutExtreme,b.h);
+   if(side==='BUY'&&crossLow)breakoutExtreme=Math.min(breakoutExtreme,b.l);
    if(inside){
     progress=lastInsideAt&&b.t-lastInsideAt===CRT_M5_MS?progress+1:1;
     lastInsideAt=b.t;
    }else{progress=0;lastInsideAt=0;} /* M5 chiuse e cronologicamente consecutive */
    if(progress>=required){
-    complete={side,at:b.t+CRT_M5_MS,breakoutAt};
-    side=null;progress=0;lastInsideAt=0;breakoutAt=0;
+    complete={side,at:b.t+CRT_M5_MS,breakoutAt,breakoutExtreme};
+    side=null;progress=0;lastInsideAt=0;breakoutAt=0;breakoutExtreme=NaN;
    }
   }
  }
@@ -1245,13 +1252,14 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  if(side){
   const stage=progress>0?3:2;
   return {ready:true,h4,high,low,range,price,side,stage,distance,progress,
-    breakoutAt,status:progress>0?'RIENTRO '+progress+'/'+required:'ROTTURA · ATTESA RIENTRO',
+    breakoutAt,breakoutExtreme,status:progress>0?'RIENTRO '+progress+'/'+required:'ROTTURA · ATTESA RIENTRO',
     at:latest.t+CRT_M5_MS};
  }
  if(complete&&now-complete.at<=7*60000)
   return {ready:true,h4,high,low,range,price,side:complete.side,stage:4,
    distance:Math.abs(price-(complete.side==='SELL'?high:low))/range,
-   progress:required,confirmedAt:complete.at,status:'CONFERMATO '+required+'/'+required,
+   progress:required,confirmedAt:complete.at,breakoutAt:complete.breakoutAt,
+   breakoutExtreme:complete.breakoutExtreme,status:'CONFERMATO '+required+'/'+required,
    at:latest.t+CRT_M5_MS};
  const proximitySide=nearHigh<=nearLow?'SELL':'BUY';
  const stage=distance<=0.20?1:0;
@@ -1428,14 +1436,16 @@ function assertConfirmedCRT(row,expected=null,requestedSide=null,quote=null){
  if(!Number.isFinite(c.confirmedAt)||Date.now()-c.confirmedAt>CRT_M5_MS)
   throw Error('CRT: terza candela M5 scaduta.');
  if(expected&&(c.confirmedAt!==expected.confirmedAt||c.side!==expected.side||h.t!==expected.h4At||
-  expected.required!==crtConfirmBars))
-  throw Error('CRT: H4, conferme o direzione cambiati. Aggiorna e riprova.');
+  expected.required!==crtConfirmBars||
+  Math.abs(Number(expected.breakoutExtreme)-Number(c.breakoutExtreme))>0.0000001))
+  throw Error('CRT: H4, struttura della rottura, conferme o direzione cambiati. Aggiorna e riprova.');
  if(quote){
   const entry=c.side==='BUY'?Number(quote.ask):Number(quote.bid);
   if(!Number.isFinite(entry)||!(entry>h.l&&entry<h.h))
    throw Error('CRT: PREZZO LIVE FUORI DAL RANGE H4. ORDINE BLOCCATO.');
  }
- return {confirmedAt:c.confirmedAt,side:c.side,h4At:h.t,required:crtConfirmBars};
+ return {confirmedAt:c.confirmedAt,side:c.side,h4At:h.t,required:crtConfirmBars,
+  breakoutExtreme:c.breakoutExtreme,breakoutAt:c.breakoutAt};
 }
 function assertConfirmedTrend(row,expected=null,requestedSide=null){
  if(!row)throw Error('TREND: simbolo non disponibile.');
