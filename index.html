@@ -186,6 +186,7 @@
 #ranking[data-mode^="crt"] .controls .go{grid-column:1/-1}
 #ranking[data-mode^="crt"] .controls label[hidden]{display:none!important}
 #ranking[data-mode^="crt"] .controls select{min-width:0;font-size:12px;min-height:40px}
+#ranking[data-mode^="crt"] .tradeSlModeBtn{width:100%;min-height:44px;margin-top:3px;padding:6px 4px;border:1px solid #c69a53;border-radius:7px;background:#202f42;color:#f9d58b;font-size:11px;font-weight:850;cursor:pointer;touch-action:manipulation}
 @media(max-width:480px){#ranking[data-mode^="crt"] .controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 </style></head><body><main>
@@ -957,9 +958,22 @@ function keepPref(symbol,key,value){
  }
  try{localStorage.setItem(prefKey(symbol),JSON.stringify(p))}catch{}
 }
+document.addEventListener('click',event=>{
+ const btn=event.target.closest('.tradeSlModeBtn');
+ if(!btn)return;
+ const card=btn.closest('.market'),hidden=card?.querySelector('.tradeSlMode');
+ if(!card||!hidden)return;
+ const mode=hidden.value==='EUR'?'STR':'EUR';
+ hidden.value=mode;
+ btn.textContent=mode==='STR'?'STR + PIPS ▾':'SL EURO € ▾';
+ const eur=card.querySelector('.tradeSlEuroWrap'),str=card.querySelector('.tradeSlBufferWrap');
+ if(eur)eur.hidden=mode!=='EUR';
+ if(str)str.hidden=mode!=='STR';
+ keepPref(btn.dataset.symbol,'slMode',mode);
+});
 document.addEventListener('change',event=>{
  const t=event.target;
- if(!(t?.matches?.('.tradeTrail,.tradeLot,.tradeSl,.tradeSlMode,.tradeSlBuffer')))return;
+ if(!(t?.matches?.('.tradeTrail,.tradeLot,.tradeSl,.tradeSlBuffer')))return;
  const sym=t.dataset.symbol;
  if(!sym)return;
  if(t.matches('.tradeSlMode')){
@@ -1507,9 +1521,9 @@ function marketTradeControlsHTML(r,p,view){
  return heading+'<div class="controls">'+
   '<label>LOTTO<input class="tradeLot" data-symbol="'+e(r.name)+'" type="number" min="0.001" step="0.01" value="'+p.lot+'"/></label>'+
   (crtMode?
-   '<label>TIPO SL<select class="tradeSlMode" data-symbol="'+e(r.name)+'">'+
-    '<option value="EUR"'+(p.slMode==='EUR'?' selected':'')+'>EURO €</option>'+
-    '<option value="STR"'+(p.slMode==='STR'?' selected':'')+'>STR + PIPS</option></select></label>'+
+   '<label>TIPO SL<input type="hidden" class="tradeSlMode" data-symbol="'+e(r.name)+'" value="'+e(p.slMode)+'">'+
+    '<button type="button" class="tradeSlModeBtn" data-symbol="'+e(r.name)+'">'+
+    (p.slMode==='STR'?'STR + PIPS ▾':'SL EURO € ▾')+'</button></label>'+
    '<label class="tradeSlEuroWrap"'+(p.slMode==='STR'?' hidden':'')+'>SL MAX €<input class="tradeSl" data-symbol="'+e(r.name)+'" type="number" min="0.5" step="0.5" value="'+p.sl+'"/></label>'+
    '<label class="tradeSlBufferWrap"'+(p.slMode!=='STR'?' hidden':'')+'>BUFFER PIPS<input class="tradeSlBuffer" data-symbol="'+e(r.name)+'" type="number" min="0.5" max="50" step="0.5" value="'+p.bufferPips+'"/></label>':
    '<label>SL MAX €<input class="tradeSl" data-symbol="'+e(r.name)+'" type="number" min="0.5" step="0.5" value="'+p.sl+'"/></label>')+
@@ -2559,7 +2573,11 @@ document.addEventListener('click',async event=>{
    `<p class="cloudOrderWarn"><b>MOTORE CRT · ${e(signalGate.side)} CONFERMATO</b> · ${crtConfirmBars} rientri M5 nel range H4 · ora ${e(new Date(signalGate.confirmedAt).toLocaleTimeString('it-IT'))}. Prima dell'invio: ricontrollo prezzo live dentro H4.</p>`:
    `<p class="cloudOrderWarn"><b>MOTORE TREND · ${e(signalGate.side)} CONFERMATO</b> · M5 con struttura, direzione e volumi validati · chiusura ${e(new Date(signalGate.closedAt).toLocaleTimeString('it-IT'))}. Nessuna dipendenza dalla CRT.</p>`;
 
-  $('modalText').innerHTML=`${signalInfo}${quoteNotice}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · ${draft.slMode==='STR'?'SL STR + '+draft.bufferPips+' pips':'SL MAX '+draft.slEuro.toFixed(2)+' € (budget stimato)'}.</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
+  const structuralInfo=draft.slMode==='STR'?
+    '<p><b>ESTREMO ROTTURA M5:</b> '+e(draft.structuralExtreme.toFixed(draft.digits))+
+    ' · <b>BUFFER:</b> '+e(draft.bufferPips)+' pips · <b>STOP TARGET:</b> '+
+    e(draft.structuralStopTarget.toFixed(draft.digits))+'</p>':'';
+  $('modalText').innerHTML=`${signalInfo}${quoteNotice}${structuralInfo}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · ${draft.slMode==='STR'?'SL STR + '+draft.bufferPips+' pips':'SL MAX '+draft.slEuro.toFixed(2)+' € (budget stimato)'}.</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
   $('orderConfirm').disabled=draft.engine==='cbot';
  }catch(err){
   if(requestId===draftPreparationToken&&$('orderDialog').open){
