@@ -2393,7 +2393,15 @@ async function submitMarketOrder(){
   const result=await firstValueFrom(SDK.createNewOrder(app.adapter,{
     symbolId:chosen.symbolId,orderType:ord,tradeSide:dir,volume:chosen.volume,
     relativeStopLoss:chosen.relativeUnits,trailingStopLoss:chosen.nativeTrailing,label:chosen.label,
-    comment:'LM TREND MARKETS MOBILEAPP '+chosen.trail+' '+(chosen.engine==='cbot'?'CBOT':'NATIVO'),clientOrderId
+    // Per lo SL strutturale CRT allega il target ASSOLUTO come metadato.
+    // Lo SL iniziale e' comunque relativo ed e' inviato NELLO STESSO ordine.
+    // Il cBot v4.6 (modalita' CBOT) puo' rimettere lo SL oltre la M5
+    // piu' estrema dopo il fill, se necessario per via dello slippage.
+    comment:chosen.signalEngine==='crt'&&chosen.slMode==='STR'?
+      'LMCRTSTR1|'+chosen.side+'|'+chosen.structuralStopTarget.toFixed(chosen.digits)+
+      '|'+chosen.structuralExtreme.toFixed(chosen.digits)+'|'+chosen.bufferPips:
+      'LM TREND MARKETS MOBILEAPP '+chosen.trail+' '+(chosen.engine==='cbot'?'CBOT':'NATIVO'),
+    clientOrderId
   }).pipe(take(1),timeout({first:15000})));
   // Potrebbe contenere la posizione con SL; altrimenti aspettiamo
   // l'evento executionEvent. L'accettazione da sola NON conferma lo SL.
@@ -2619,15 +2627,18 @@ document.addEventListener('click',async event=>{
     'La perdita reale puo\' superare quella stimata per spread, slippage, gap e costi. '+
     'Per procedere serve una SECONDA conferma esplicita nel popup.</p>':'';
   const bridgeNote=signalEngine==='crt'&&draft.engine==='cbot'?
-   '<p class="cloudOrderWarn"><b>TRAILING CBOT CRT v3.3:</b> per spostare lo SL il cBot aggiornato deve restare acceso sullo stesso conto. La MobileApp NON può verificarne l’attività. Lo SL iniziale viene inviato al broker.</p>':'';
+   '<p class="cloudOrderWarn"><b>CBOT LM CRT v4.6 / PROTOCOLLO v3.3:</b> il cBot aggiornato sullo stesso conto gestisce il trailing; con SL STR verifica anche il target assoluto della M5 più estrema dopo il fill. La MobileApp NON può verificarne l’attività. Lo SL iniziale viene già inviato al broker.</p>':'';
   const signalInfo=signalEngine==='crt'?
    `<p class="cloudOrderWarn"><b>MOTORE CRT · ${e(signalGate.side)} CONFERMATO</b> · ${crtConfirmBars} rientri M5 nel range H4 · ora ${e(new Date(signalGate.confirmedAt).toLocaleTimeString('it-IT'))}. Prima dell'invio: ricontrollo prezzo live dentro H4.</p>`:
    `<p class="cloudOrderWarn"><b>MOTORE TREND · ${e(signalGate.side)} CONFERMATO</b> · M5 con struttura, direzione e volumi validati · chiusura ${e(new Date(signalGate.closedAt).toLocaleTimeString('it-IT'))}. Nessuna dipendenza dalla CRT.</p>`;
 
   const structuralInfo=draft.slMode==='STR'?
-    '<p><b>ESTREMO ROTTURA M5:</b> '+e(draft.structuralExtreme.toFixed(draft.digits))+
-    ' · <b>BUFFER:</b> '+e(draft.bufferPips)+' pips · <b>STOP TARGET:</b> '+
-    e(draft.structuralStopTarget.toFixed(draft.digits))+'</p>':'';
+    '<p><b>SL STRUTTURALE CRT:</b> oltre la M5 che ha raggiunto il massimo/minimo '+
+    'più lontano FUORI dalla H4. <b>ESTREMO M5:</b> '+
+    e(draft.structuralExtreme.toFixed(draft.digits))+
+    ' · <b>BUFFER:</b> '+e(draft.bufferPips)+' pips · <b>SL TARGET:</b> '+
+    e(draft.structuralStopTarget.toFixed(draft.digits))+
+    ' · Inviato con l’ordine, non dopo.</p>':'';
   $('modalText').innerHTML=`${signalInfo}${quoteNotice}${bridgeNote}${structuralInfo}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · ${draft.slMode==='STR'?'SL STR + '+draft.bufferPips+' pips':'SL MAX '+draft.slEuro.toFixed(2)+' € (budget stimato)'}.</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
   $('orderConfirm').disabled=draft.engine==='cbot';
  }catch(err){
