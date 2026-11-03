@@ -968,7 +968,7 @@ document.addEventListener('click',event=>{
  if(!card||!hidden)return;
  const mode=hidden.value==='EUR'?'STR':'EUR';
  hidden.value=mode;
- btn.textContent=mode==='STR'?'STR + PIPS ▾':'SL EURO € ▾';
+ btn.textContent=mode==='STR'?'STR M5 + PIPS ▾':'SL EURO € ▾';
  const eur=card.querySelector('.tradeSlEuroWrap'),str=card.querySelector('.tradeSlBufferWrap');
  if(eur)eur.hidden=mode!=='EUR';
  if(str)str.hidden=mode!=='STR';
@@ -1562,7 +1562,7 @@ function marketTradeControlsHTML(r,p,view){
   (crtMode?
    '<label>TIPO SL<input type="hidden" class="tradeSlMode" data-symbol="'+e(r.name)+'" value="'+e(p.slMode)+'">'+
     '<button type="button" class="tradeSlModeBtn" data-symbol="'+e(r.name)+'">'+
-    (p.slMode==='STR'?'STR + PIPS ▾':'SL EURO € ▾')+'</button></label>'+
+    (p.slMode==='STR'?'STR M5 + PIPS ▾':'SL EURO € ▾')+'</button></label>'+
    '<label class="tradeSlEuroWrap"'+(p.slMode==='STR'?' hidden':'')+'>SL MAX €<input class="tradeSl" data-symbol="'+e(r.name)+'" type="number" min="0.5" step="0.5" value="'+p.sl+'"/></label>'+
    '<label class="tradeSlBufferWrap"'+(p.slMode!=='STR'?' hidden':'')+'>BUFFER PIPS<input class="tradeSlBuffer" data-symbol="'+e(r.name)+'" type="number" min="0.5" max="50" step="0.5" value="'+p.bufferPips+'"/></label>':
    '<label>SL MAX €<input class="tradeSl" data-symbol="'+e(r.name)+'" type="number" min="0.5" step="0.5" value="'+p.sl+'"/></label>')+
