@@ -534,7 +534,7 @@ function prepareCbotAck(engine){
  cbotoManualConfirmed=false;quotePartialAck=false;
  const b=$('cbotAck');b.style.display=engine==='cbot'?'block':'none';b.classList.remove('active');
  b.textContent=chosen?.signalEngine==='crt'?
-  'CONFERMO: cBot LM CRT H4 PRO v3.3 ATTIVO sullo stesso conto':
+  'CONFERMO: cBot LM CRT H4 PRO v4.6 ATTIVO sullo stesso conto':
   'CONFERMO: ho verificato il cBot AVVIATO sullo stesso conto';
  const q=$('quoteAck');
  q.style.display=chosen?.quotePartial?'block':'none';
@@ -2608,15 +2608,15 @@ document.addEventListener('click',async event=>{
    draft.trendGate=signalGate;
   }
   draft.signalEngine=signalEngine;
-  // SOLO CRT e SOLO motore CBOT: il cBot v3.3 riconosce queste etichette.
+  // SOLO CRT e SOLO motore CBOT: il cBot v4.6 usa le stesse etichette protocollo v3.3.
   // Modalita' fissata nella singola posizione, senza gestire ordini manuali nativi.
   if(signalEngine==='crt'&&draft.engine==='cbot'){
    const code={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF'}[draft.trail];
-   if(!code)throw Error('Trailing MobileApp non valido per cBot CRT v3.3.');
+   if(!code)throw Error('Trailing MobileApp non valido per cBot CRT v4.6.');
    draft.label='LMCRT33_MOB_'+code+'_'+draft.name;
    draft.nativeTrailing=false;
-   draft.profileText=code==='OFF'?'CBOT CRT v3.3 · OFF':
-    'CBOT CRT v3.3 · '+(code==='ST'?'Stretto +2/+1 €':code==='MD'?'Medio +4/+2 €':'Lungo +6/+3 €');
+   draft.profileText=code==='OFF'?'CBOT CRT v4.6 · OFF':
+    'CBOT CRT v4.6 · '+(code==='ST'?'Stretto +2/+1 €':code==='MD'?'Medio +4/+2 €':'Lungo +6/+3 €');
   }
   chosen=draft;
   prepareCbotAck(draft.engine);
