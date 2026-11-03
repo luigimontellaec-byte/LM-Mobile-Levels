@@ -1220,12 +1220,19 @@ crtConfirmDialog.addEventListener('click',ev=>{
   Never substitute an aggregation that might differ from the broker's H4 session. */
 async function crtLastClosedH4(id){
  const now=Date.now(),cached=CRT_H4_CACHE.get(id);
- if(cached?.h4&&now-cached.fetchedAt<180000)return cached.h4;
+ // Dopo la chiusura della H4 successiva non riusare per tre minuti il
+ // vecchio range H4: chiedi subito il nuovo massimo/minimo al broker.
+ const rolloverAt=cached?.h4?.t+2*CRT_H4_MS;
+ const rolloverPending=Number.isFinite(rolloverAt)&&now>=rolloverAt;
+ const fetchedAfterRollover=rolloverPending&&cached.fetchedAt>=rolloverAt;
+ const refreshMs=rolloverPending?15000:180000;
+ if(cached?.h4&&now-cached.fetchedAt<refreshMs&&
+   (!rolloverPending||fetchedAfterRollover))return cached.h4;
  const known=HTF_CONTEXT_CACHE.get(id+':'+PLUGIN_TF.H4);
  if(known?.bars?.length&&now-(known.fetchedAt||0)<180000){
   const bars=assertTrendbarCadence(known.bars,240,'H4');
   const last=bars.filter(b=>b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now).at(-1);
-  if(last){
+  if(last && !(now>=last.t+2*CRT_H4_MS)){
    const h4={...last,source:'H4 broker · periodo 18'};
    CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
    return h4;
