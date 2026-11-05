@@ -2295,6 +2295,8 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMo
   calc=calculateStructuralBrokerSL(info,volume,verified.extreme,bufferPips,conversion,entry,side);
  }else calc=calculateBrokerSL(info,volume,budget,conversion,entry,side);
  const tag={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF'}[trail];
+ const brokerSymbol=brokerNameForRow(row);
+ if(trailEngine==='cbot'&&!brokerSymbol)throw Error('Simbolo broker non verificato: il cBot CRT non potrebbe riconoscere il trailing.');
  return {name,side,lot,slEuro,slMode,bufferPips,trail,tag,symbolId:row.id,volume,
    stopMeta:{digits:field(info,['digits']),tickSize:field(info,['tickSize']),
     pipPosition:field(info,['pipPosition']),slDistance:field(info,['slDistance']),
@@ -2304,7 +2306,7 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMo
    relativeUnits:calc.relativeUnits,priceDist:calc.priceDist,slPrice:calc.slPrice,entry,digits:calc.digits,
    units:calc.units,tick:calc.tick,accountCurrency:cur,fxRate:conversion,quoteCurrency:quote.currency,contractQuoteSource:quote.source,
    spreadInfo:spreadInfo.text,quotePartial:execution.partial===true,
-   quoteMissingReason:execution.reason||'',created:Date.now(),label:trailEngine==='cbot'?'LMCRT33_MOB_'+tag+'_'+name:'LMCRT_NATIVE_'+tag+'_'+name,
+   quoteMissingReason:execution.reason||'',created:Date.now(),label:trailEngine==='cbot'?'LMCRT33_MOB_'+tag+'_'+brokerSymbol:'LMCRT_NATIVE_'+tag+'_'+(brokerSymbol||name),
    engine:trailEngine,nativeTrailing:trailEngine==='native'&&native.enabled,
    profileText:trailEngine==='cbot'?'cBot '+trail+' (SL fisso iniziale)':native.label,effectiveRiskEuro:calc.effectiveRiskEuro};
 }
