@@ -1,5 +1,5 @@
 {
-  "version": "11.1",
-  "build": 111,
-  "description": "CRT M5: menu 2–6 candele reso compatibile con cTrader Mobile usando pulsante e dialog modale invece del select nativo. Scelta memorizzata per dispositivo, segnali CRT ricalcolati immediatamente, TREND e trailing invariati."
+  "version": "12.0",
+  "build": 120,
+  "description": "LM CRT H4 MOBILEAPP · SOLO CRT · TOP 6 dinamica · trend principale H1 BULLISH/BEARISH · prudenza H4 forte · rottura minima H4 in pips · conferme M5 · bridge cBot v4.16 · ordini manuali e trailing separato"
 }
