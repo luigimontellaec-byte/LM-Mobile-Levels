@@ -1,5 +1,5 @@
 {
-  "version": "12.4",
-  "build": 124,
-  "description": "LM CRT H4 MOBILEAPP · Scanner H24, 14 mercati · H4 precedente se inside · doppia chiusura M5 fuori e dentro, struttura facoltativa OFF · SL EUR/STR, trailing OFF default e TP% con TP H4 configurabile (default 55%) · Bridge mobile TP verso cBot v4.36 · ordini manuali, Autotrade solo nel cBot"
+  "version": "12.5",
+  "build": 125,
+  "description": "LM CRT H4 MOBILEAPP · 14 mercati · CRT 2 M5 fuori e 2 dentro solo chiusure · H4 madre se inside · filtro struttura OFF iniziale · trailing OFF iniziale e TP% bridge con TP 55% H4 modificabile · etichette con nome broker esatto · scanner H24 nel cBot e App attiva mentre aperta · operazioni manuali da app"
 }
