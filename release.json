@@ -1,5 +1,5 @@
 {
-  "version": "12.3",
-  "build": 123,
-  "description": "LM CRT H4 MOBILEAPP · 14 simboli FP Trading RAW · scanner H24 · 2 M5 consecutive chiuse fuori e 2 chiuse dentro H4 · filtro struttura M5 facoltativo OFF · H4 precedente se ultima H4 inside · ordini manuali con SL EUR/STR · TP% con bridge cBot v4.36; Autotrade solo nel cBot"
+  "version": "12.4",
+  "build": 124,
+  "description": "LM CRT H4 MOBILEAPP · Scanner H24, 14 mercati · H4 precedente se inside · doppia chiusura M5 fuori e dentro, struttura facoltativa OFF · SL EUR/STR, trailing OFF default e TP% con TP H4 configurabile (default 55%) · Bridge mobile TP verso cBot v4.36 · ordini manuali, Autotrade solo nel cBot"
 }
