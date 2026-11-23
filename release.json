@@ -1,5 +1,5 @@
 {
-  "version": "12.2",
-  "build": 122,
-  "description": "LM CRT H4 MOBILEAPP · 14 asset FP Trading RAW · rottura H4 solo dopo 2 M5 consecutive chiuse oltre HIGH/LOW · rientro M5 con filtro struttura · avvisi sonori BUY/SELL attivabili · TOP 6 CRT · solo ordini manuali · SL EUR/STR e trailing separato"
+  "version": "12.3",
+  "build": 123,
+  "description": "LM CRT H4 MOBILEAPP · 14 simboli FP Trading RAW · scanner H24 · 2 M5 consecutive chiuse fuori e 2 chiuse dentro H4 · filtro struttura M5 facoltativo OFF · H4 precedente se ultima H4 inside · ordini manuali con SL EUR/STR · TP% con bridge cBot v4.36; Autotrade solo nel cBot"
 }
