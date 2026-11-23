@@ -234,7 +234,7 @@
 <div class="scoreFilter" id="scoreFilterPanel" hidden aria-hidden="true" style="display:none!important"><span id="scoreFilterLabel">Mostra punteggi da</span><div class="filterWrap"><button id="minScoreToggle" type="button" class="filterToggle" aria-labelledby="scoreFilterLabel minScoreToggle" aria-expanded="false" aria-controls="minScoreMenu">0 — Tutti ▾</button><div id="minScoreMenu" class="filterMenu" hidden role="group" aria-label="Punteggio minimo"><button class="filterChoice" type="button" data-minimum="0" data-active="1">0 — Tutti</button><button class="filterChoice" type="button" data-minimum="40">40 — Moderati e forti</button><button class="filterChoice" type="button" data-minimum="60">60 — Solo forti</button><button class="filterChoice" type="button" data-minimum="80">80 — Molto forti</button></div></div></div>
 <div id="autoScanInfo" class="liveRefresh" role="status" aria-live="polite">AUTO M5 · avvio scanner</div><div id="ranking">Collegamento dati cTrader…</div></section>
 <section class="panel gold" id="trendGraphSection"><div class="graphHead"><h2>GRAFICO PREZZO</h2><span id="graphSymbol">Seleziona un simbolo</span></div><svg id="trendChart" viewBox="0 0 730 300" role="img" aria-label="Grafico delle candele su dati del broker" preserveAspectRatio="xMidYMid meet"><text x="20" y="155" fill="#91a0b4" font-size="15">In attesa delle barre del broker</text></svg><div class="chartLegend"><span>Movimento del prezzo · cTrader</span></div></section>
-<section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="OFF"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
+<section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TP H4 %<input id="globalTpPercent" type="number" inputmode="decimal" min="1" max="100" step="1" value="55" title="Target TP% verso il lato opposto del range H4" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="OFF"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
 <div class="small" style="padding-top:8px">Per il cBot locale o Cloud l’ordine partirà con SL reale e trailing nativo OFF; il cBot dev’essere già avviato sullo stesso conto.</div></section>
 <section class="panel"><h2>STATO E DETTAGLI</h2><div id="notice">Solo dati reali dal broker. Nessun punteggio inventato.</div><div id="details" class="small">Seleziona un mercato e premi GRAFICO per vedere il prezzo.</div><button type="button" id="scan">↻ AGGIORNA CLASSIFICA</button></section>
 <footer class="foot">Versione 11.1 CRT M5 PICKER · DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
@@ -260,7 +260,7 @@
   <button type="button" class="trailOpt" data-trail-choice="OFF">OFF</button>
   <button type="button" class="trailOpt" data-trail-choice="TP_PCT">TP% (CBOT)</button>
  </div>
- <p>OFF: nessun trailing. STRETTO/NORMALE/LUNGO: profili del motore scelto. <b>TP% richiede motore CBOT con LM CRT H4 PRO v4.36 avviato sullo stesso conto</b>: a 50% del TP va a BE, ogni ulteriore 10% protegge +2% del TP (oppure soglie specifiche impostate nel cBot). Nativo: TP% non disponibile.</p>
+ <p>OFF: nessun trailing. STRETTO/NORMALE/LUNGO: profili del motore scelto. <b>TP% richiede motore CBOT con LM CRT H4 PRO v4.36 avviato sullo stesso conto</b> e inserisce un TP sul range H4 (55% iniziale, modificabile nel pannello): a 50% del TP va a BE, ogni ulteriore 10% protegge +2% del TP (oppure soglie specifiche impostate nel cBot). Nativo: TP% non disponibile.</p>
  <button class="btn" id="closeTrailDialog" type="button">Annulla</button>
 </dialog>
 <dialog id="chartDialog" aria-labelledby="chartModalHeading">
@@ -2403,6 +2403,37 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMo
   spreadAssessment(name,q);
  if(!validSide(q,side))throw Error('Prezzo LIVE '+side+' non disponibile.');
  const entry=side==='BUY'?q.ask:q.bid;
+ // Per il trailing TP% occorre un Take Profit REALE sull'ordine mobile:
+ // percentuale H4 scelta nel pannello, default 55% come cBot.
+ let relativeTpUnits=null,tpTargetPrice=null,tpPercent=null;
+ if(trail==='TP_PCT'){
+  const h4=row.crtH4;
+  tpPercent=Number(document.getElementById('globalTpPercent')?.value);
+  if(!Number.isFinite(tpPercent)||tpPercent<=0||tpPercent>100)
+   throw Error('TP H4% non valido: imposta un numero fra 1 e 100.');
+  if(!h4||!(h4.h>h4.l))throw Error('TP% richiede il range H4 valido del broker.');
+  const target=side==='BUY'?h4.l+(h4.h-h4.l)*tpPercent/100:
+    h4.h-(h4.h-h4.l)*tpPercent/100;
+  const distance=side==='BUY'?target-entry:entry-target;
+  const rawTick=Number(field(info,['tickSize'])),digits=Number(field(info,['digits']));
+  if(!(rawTick>0&&Number.isInteger(digits)&&digits>=0&&digits<=8))
+   throw Error('TP%: precisione prezzo/tick broker non disponibile.');
+  const step=Math.round(rawTick*100000);
+  if(!Number.isSafeInteger(step)||step<1||Math.abs(rawTick*100000-step)>1e-6)
+   throw Error('TP%: tick broker incompatibile con unità TP relative.');
+  relativeTpUnits=Math.floor(distance*100000/step+1e-8)*step;
+  if(!Number.isSafeInteger(relativeTpUnits)||relativeTpUnits<=step)
+   throw Error('TP%: il prezzo ha già raggiunto/superato il target H4, oppure TP troppo vicino. Ordine bloccato.');
+  const minDist=Number(field(info,['tpDistance']));
+  const distMode=field(info,['distanceSetIn']);
+  if(Number.isFinite(minDist)&&minDist>0){
+   if(distMode!=null&&Number(distMode)!==1)throw Error('TP%: unità del minimo TP broker non verificata.');
+   if(relativeTpUnits/100000+1e-10<minDist*10**-digits)
+    throw Error('TP%: distanza TP inferiore al minimo consentito dal broker.');
+  }
+  tpTargetPrice=side==='BUY'?entry+relativeTpUnits/100000:entry-relativeTpUnits/100000;
+  if(!(tpTargetPrice>0))throw Error('TP%: target TP non valido.');
+ }
  if(trail==='TP_PCT'&&trailEngine!=='cbot')throw Error('Trail TP% richiede motore CBOT con LM CRT H4 PRO v4.36 in esecuzione.');
  const native=nativeTrailProfile(trail);
  const budget=slEuro*(trailEngine==='cbot'?1:native.fraction);
@@ -2415,7 +2446,7 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMo
  const tag={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF',TP_PCT:'TP'}[trail];
  const brokerSymbol=brokerNameForRow(row);
  if(trailEngine==='cbot'&&!brokerSymbol)throw Error('Simbolo broker non verificato: il cBot CRT non potrebbe riconoscere il trailing.');
- return {name,side,lot,slEuro,slMode,bufferPips,trail,tag,symbolId:row.id,volume,
+ return {name,side,lot,slEuro,slMode,bufferPips,trail,tag,symbolId:row.id,volume,relativeTpUnits,tpTargetPrice,tpPercent,
    stopMeta:{digits:field(info,['digits']),tickSize:field(info,['tickSize']),
     pipPosition:field(info,['pipPosition']),slDistance:field(info,['slDistance']),
     distanceSetIn:field(info,['distanceSetIn'])},
@@ -2568,7 +2599,7 @@ async function submitMarketOrder(){
   transmitted=true;
   const result=await firstValueFrom(SDK.createNewOrder(app.adapter,{
     symbolId:chosen.symbolId,orderType:ord,tradeSide:dir,volume:chosen.volume,
-    relativeStopLoss:chosen.relativeUnits,trailingStopLoss:chosen.nativeTrailing,label:chosen.label,
+    relativeStopLoss:chosen.relativeUnits,...(chosen.relativeTpUnits?{relativeTakeProfit:chosen.relativeTpUnits}:{}),trailingStopLoss:chosen.nativeTrailing,label:chosen.label,
     // Per lo SL strutturale CRT allega il target ASSOLUTO come metadato.
     // Lo SL iniziale e' comunque relativo ed e' inviato NELLO STESSO ordine.
     // Il cBot v4.36 (modalita' CBOT) puo' rimettere lo SL oltre la M5
@@ -2811,7 +2842,8 @@ document.addEventListener('click',async event=>{
     ' · <b>BUFFER:</b> '+e(draft.bufferPips)+' pips · <b>SL TARGET:</b> '+
     e(draft.structuralStopTarget.toFixed(draft.digits))+
     ' · Inviato con l’ordine, non dopo.</p>':'';
-  $('modalText').innerHTML=`${signalInfo}${quoteNotice}${bridgeNote}${structuralInfo}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · ${draft.slMode==='STR'?'SL STR + '+draft.bufferPips+' pips':'SL MAX '+draft.slEuro.toFixed(2)+' € (budget stimato)'}.</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
+  const tpInfo=draft.relativeTpUnits?'<p><b>TP H4 '+e(draft.tpPercent)+'% · '+e(draft.tpTargetPrice.toFixed(draft.digits))+'</b> · Inviato al broker con l’ordine. Il cBot gestirà il trailing TP% solo se resta attivo.</p>':'';
+  $('modalText').innerHTML=`${signalInfo}${quoteNotice}${bridgeNote}${structuralInfo}${tpInfo}<p><b>${draft.side} ${e(draft.name)}</b> · Lotto ${draft.lot} · ${draft.slMode==='STR'?'SL STR + '+draft.bufferPips+' pips':'SL MAX '+draft.slEuro.toFixed(2)+' € (budget stimato)'}.</p><p><b>SL STIMATO ${draft.effectiveRiskEuro.toFixed(2)} €</b> · SL iniziale ${draft.slPrice.toFixed(draft.digits)} · Distanza ${draft.priceDist.toFixed(draft.digits)}.</p><p><b>CONTRATTO:</b> ${draft.units} unità di base · P&amp;L in ${e(draft.quoteCurrency)} (${e(draft.contractQuoteSource)}) · tick ${draft.tick}. Stima prima dell’esecuzione, esclusi slippage, gap, spread aggiuntivo e commissioni.</p><p><b>${e(draft.spreadInfo)}</b> · Solo avviso, nessun blocco.</p><p><b>TRAIL: ${e(draft.profileText)}</b> · ${draft.engine==='cbot'?'GESTIONE CBOT: lo SL rimane fisso se il cBot non è avviato. Stato cBot non verificabile automaticamente.':draft.nativeTrailing?'Trailing NATIVO broker, se accettato.':'SL fisso senza trailing.'}</p><p class="cloudOrderWarn"><b>ATTENZIONE · TRAIL CLOUD:</b> ${e(trailCloudTradeNotice(draft.trail,draft.engine))}</p><p class="danger"><b>PRIMA DEL TRADE:</b> ${e(phaseNote)}</p><p class="danger">Ordine MARKET reale. La perdita finale può superare la stima per spread, slippage, gap, commissioni e conversione. Il trailing nativo non equivale a breakeven o trailing a scatti. Verifica SL e TRAIL nelle Posizioni dopo l’invio; il broker può rifiutare la protezione.</p>`;
   $('orderConfirm').disabled=draft.engine==='cbot';
  }catch(err){
   if(requestId===draftPreparationToken&&$('orderDialog').open){
