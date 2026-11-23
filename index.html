@@ -212,8 +212,9 @@
  <p id="cloudTrailText">Lo stato Cloud non è leggibile direttamente. Gli aggiornamenti SL sono solo un indizio, non una conferma di attività.</p></div>
  <button type="button" id="cloudTrailVerify">COME VERIFICARE</button>
 </div>
+<div class="liveRefresh" role="status">SCANNER CRT H24 · Le 2 fasce orarie e l’Autotrade sono gestiti esclusivamente nel cBot, non da questa pagina. La MobileApp mostra i segnali e consente ordini manuali.</div>
 <section class="panel gold"><h2 id="rankingTitle">TOP 6 DINAMICA · CRT H4/M5</h2><div class="rankingIntro"><b>SOLO CRT:</b> i 6 mercati piu vicini ai setup; si aggiornano secondo conferme, rientri, rotture e distanza dalla H4 precedente.</div>
-<div class="metrics"><span class="metric">Fonte: <b>cTrader</b></span><span class="metric"><b>BUY ▲ / SELL ▼</b></span><span id="counter">0 mercati</span></div><div class="strengthGuide">Rottura H4 valida solo con <b>2 M5 CONSECUTIVE CHIUSE FUORI DALLO STESSO LIVELLO</b> (solo wick = nessun breakout). Poi servono almeno 2 M5 con apertura e chiusura completamente dentro il range; la seconda deve chiudere oltre l'estremo della prima in direzione del rientro. <b>TREND PRINCIPALE H1</b> e <b>PRUDENZA H4</b> sono soltanto avvisi, mai blocchi. Operativita esclusivamente manuale su CRT confermata.</div>
+<div class="metrics"><span class="metric">Fonte: <b>cTrader</b></span><span class="metric"><b>BUY ▲ / SELL ▼</b></span><span id="counter">0 mercati</span></div><div class="strengthGuide">Rottura H4 valida solo con <b>2 M5 CONSECUTIVE CHIUSE FUORI DALLO STESSO LIVELLO</b> (solo wick = nessun breakout). Poi servono almeno 2 M5 consecutive con CHIUSURA nel range (apertura irrilevante); la seconda deve chiudere oltre l'estremo della prima in direzione del rientro. <b>TREND PRINCIPALE H1</b> e <b>PRUDENZA H4</b> sono soltanto avvisi, mai blocchi. Operativita esclusivamente manuale su CRT confermata.</div>
 <div class="engineLabel">MOTORE CRT · H4 / M5</div>
 <div class="rankingTabs crtTabs" role="group" aria-label="Classifiche CRT">
  <button type="button" data-rank-view="crt" aria-pressed="true">CRT TOP</button>
@@ -223,8 +224,9 @@
 <div id="rankingViewHint" class="rankingViewHint" role="status">CRT TOP 6: confermati → rientri → rotture → vicini H4. Nessun secondo motore Trend.</div><div class="crtOptions" id="crtSettings"><span class="crtSettingsLabel" id="crtSettingsLabel">CORPI M5 DENTRO IL RANGE</span>
  <button type="button" id="crtConfirmPickerBtn" class="crtConfirmPickerBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="crtConfirmDialog" aria-labelledby="crtSettingsLabel crtConfirmPickerBtn">2 candele ▾</button>
 </div>
+<div class="crtOptions" id="crtStructureOptions"><span class="crtSettingsLabel">STRUTTURA M5 FACOLTATIVA</span><button type="button" class="btn" id="crtStructureToggle" aria-pressed="false">OFF · nessuna conferma extra</button></div>
 <div class="crtOptions"><span class="crtSettingsLabel">ROTTURA H4</span><span class="crtBreakRule">2 M5 CONSECUTIVE CHIUSE FUORI H4 · WICK NON VALIDA</span></div>
-<p class="small"><b>ROTTURA 2/2:</b> due M5 chiuse sopra HIGH H4 per SELL o sotto LOW H4 per BUY. <b>FILTRO STRUTTURA M5 ATTIVO:</b> BUY quando la seconda M5 chiude sopra il massimo della prima M5 di rientro; SELL quando chiude sotto il minimo. Se fallisce, serve una nuova rottura H4.</p>
+<p class="small"><b>ROTTURA 2/2:</b> due M5 consecutive chiuse sopra HIGH H4 per SELL o sotto LOW H4 per BUY. <b>RIENTRO:</b> almeno 2 M5 consecutive chiuse nel range H4, poi segnale alla seconda chiusura o al numero scelto. <b>STRUTTURA (OFF iniziale):</b> opzionale, usa massimo/minimo della prima M5 interna. Se l’ultima H4 chiusa è contenuta nella precedente, i livelli restano quelli della precedente.</p>
 <div class="crtSoundOptions" role="group" aria-label="Avvisi sonori CRT">
  <button id="crtSoundToggle" class="crtSoundToggle" type="button" aria-pressed="false">🔕 ATTIVA SUONI BUY / SELL</button>
  <span id="crtSoundStatus" role="status" aria-live="polite">Tocca ATTIVA SUONI per ascoltare un avviso alla conferma CRT. La MobileApp deve rimanere aperta.</span>
@@ -232,14 +234,14 @@
 <div class="scoreFilter" id="scoreFilterPanel" hidden aria-hidden="true" style="display:none!important"><span id="scoreFilterLabel">Mostra punteggi da</span><div class="filterWrap"><button id="minScoreToggle" type="button" class="filterToggle" aria-labelledby="scoreFilterLabel minScoreToggle" aria-expanded="false" aria-controls="minScoreMenu">0 — Tutti ▾</button><div id="minScoreMenu" class="filterMenu" hidden role="group" aria-label="Punteggio minimo"><button class="filterChoice" type="button" data-minimum="0" data-active="1">0 — Tutti</button><button class="filterChoice" type="button" data-minimum="40">40 — Moderati e forti</button><button class="filterChoice" type="button" data-minimum="60">60 — Solo forti</button><button class="filterChoice" type="button" data-minimum="80">80 — Molto forti</button></div></div></div>
 <div id="autoScanInfo" class="liveRefresh" role="status" aria-live="polite">AUTO M5 · avvio scanner</div><div id="ranking">Collegamento dati cTrader…</div></section>
 <section class="panel gold" id="trendGraphSection"><div class="graphHead"><h2>GRAFICO PREZZO</h2><span id="graphSymbol">Seleziona un simbolo</span></div><svg id="trendChart" viewBox="0 0 730 300" role="img" aria-label="Grafico delle candele su dati del broker" preserveAspectRatio="xMidYMid meet"><text x="20" y="155" fill="#91a0b4" font-size="15">In attesa delle barre del broker</text></svg><div class="chartLegend"><span>Movimento del prezzo · cTrader</span></div></section>
-<section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="Stretto"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
+<section class="panel"><h2>CONFIGURAZIONE RAPIDA</h2><div class="bar"><label>LOTTO<input id="globalLot" type="number" inputmode="decimal" min="0.001" step="0.01" value="0.01" /></label><label>SL MAX €<input id="globalSl" type="number" inputmode="decimal" min="0.5" step="0.5" value="10" /></label><label>TRAIL<input type="hidden" id="globalTrail" value="OFF"><button class="trailPickerBtn" type="button" id="globalTrailBtn" data-trail-open="global" data-value="Stretto">Stretto ▾</button></label></div><div class="engineBox"><strong>CHI GESTISCE IL TRAILING?</strong><button type="button" id="engineToggle">NATIVO · BROKER ▾</button><p id="engineDescription">Nativo: il broker gestisce il trailing anche a MobileApp chiusa. Premi per scegliere il cBot.</p><p id="engineMemoryNote" class="small" role="status" aria-live="polite">Carico la modalità salvata…</p></div>
 <div class="small" style="padding-top:8px">Per il cBot locale o Cloud l’ordine partirà con SL reale e trailing nativo OFF; il cBot dev’essere già avviato sullo stesso conto.</div></section>
 <section class="panel"><h2>STATO E DETTAGLI</h2><div id="notice">Solo dati reali dal broker. Nessun punteggio inventato.</div><div id="details" class="small">Seleziona un mercato e premi GRAFICO per vedere il prezzo.</div><button type="button" id="scan">↻ AGGIORNA CLASSIFICA</button></section>
 <footer class="foot">Versione 11.1 CRT M5 PICKER · DUAL ENGINE H4/M5: classifica per avvicinamento e conferme, linee ultima H4; MARKET CONTEXT PRO D1/H4 e ostacoli di prezzo, contesto informativo indipendente da ingresso M5; supporto esecuzione con lato Bid/Ask LIVE e conferma esplicita quando lo spread manca; ripristino feed Bid/Ask con gap senza scartare prezzi nuovi e diagnostica, rilevazione SL da eventi cTrader annidati con correlazione ordine, SL richiesto distinto da confermato; SL reale confermato all'apertura tramite evento cTrader e rilevamento avanzamento SL, conversione SL con singolo lato live EURUSD Bid o inverso Ask, prezzi simbolo e cambio separati, warm-up EURUSD e diagnostica FX, controllo nuova versione e ricarica anti-cache su URL originale, preparazione ticket ottimizzata, avanzamento controlli e timeout, conferme broker corrette e anti duplicazione ordine, recupero automatico Bid/Ask con stream cTrader, spread sincronizzato al ticket; SL EUR CFD su dati broker, ordini manuali da SEGNALI M5 CONFERMATI con lotto/SL/trail e controllo segnale, controllo broker tradingMode corretto e diagnosticato; vista SEGNALI M5 indipendente dalla forza, filtro ingresso senza R:R, nuova ripartenza M5, volumi calibrati, M5 neutrale durante pullback, taratura ingressi, AUTO M5 + quote LIVE, opportunità M5 ATTENDI/PREPARATI/INGRESSO CONFERMATO, Volumi M5 informativi, monitor movimenti SL (non conferma Cloud), scelta trailing memorizzata, spread BUONO/MEDIO/ALTO informativo, trailing NATIVO broker o CBOT locale/Cloud selezionabile. CBOT non rilevabile automaticamente: verificare l’istanza prima di operare. Testare su DEMO.</footer>
 </main>
 <dialog id="crtConfirmDialog" aria-labelledby="crtConfirmDialogTitle">
- <h3 id="crtConfirmDialogTitle">Corpi M5 dentro il range</h3>
- <p class="small">Scegli quante candele M5 <strong>consecutive e chiuse</strong> devono rientrare completamente con il corpo nel range H4. Il cambio ricalcola soltanto i segnali CRT.</p>
+ <h3 id="crtConfirmDialogTitle">Chiusure M5 dentro il range</h3>
+ <p class="small">Scegli quante candele M5 <strong>consecutive e chiuse</strong> devono chiudere dentro il range H4 (apertura irrilevante). Il cambio ricalcola soltanto i segnali CRT.</p>
  <div class="crtConfirmGrid" role="group" aria-label="Seleziona conferme M5">
   <button type="button" class="crtConfirmOpt" data-crt-confirm-choice="2">2 CANDELE</button>
   <button type="button" class="crtConfirmOpt" data-crt-confirm-choice="3">3 CANDELE</button>
@@ -256,8 +258,9 @@
   <button type="button" class="trailOpt" data-trail-choice="Normale">NORMALE</button>
   <button type="button" class="trailOpt" data-trail-choice="Lungo">LUNGO</button>
   <button type="button" class="trailOpt" data-trail-choice="OFF">OFF</button>
+  <button type="button" class="trailOpt" data-trail-choice="TP_PCT">TP% (CBOT)</button>
  </div>
- <p>Trailing nativo del broker, attivo anche con la MobileApp chiusa. STRETTO: circa 45% dello SL massimo; NORMALE: 70%; LUNGO: 100%; OFF: SL fisso senza trailing. Il trailing parte subito e non ha trigger di profitto o breakeven personalizzati.</p>
+ <p>OFF: nessun trailing. STRETTO/NORMALE/LUNGO: profili del motore scelto. <b>TP% richiede motore CBOT con LM CRT H4 PRO v4.36 avviato sullo stesso conto</b>: a 50% del TP va a BE, ogni ulteriore 10% protegge +2% del TP (oppure soglie specifiche impostate nel cBot). Nativo: TP% non disponibile.</p>
  <button class="btn" id="closeTrailDialog" type="button">Annulla</button>
 </dialog>
 <dialog id="chartDialog" aria-labelledby="chartModalHeading">
@@ -320,7 +323,7 @@ function isCryptoMarket(name){
 // Pubblicazione GitHub Pages con URL stabile (?v=81): il manifest separato
 // viene richiesto senza cache. Un reload interno aggiunge un token variabile,
  // ma non cambia l'indirizzo che l'utente ha salvato.
-const MOBILE_BUILD=122,MOBILE_VERSION='12.2 CRT H4 MOBILEAPP';
+const MOBILE_BUILD=123,MOBILE_VERSION='12.3 CRT H4 MOBILEAPP';
 let latestPublishedBuild=MOBILE_BUILD,versionCheckBusy=false;
 function mobileReleaseUI(message,outdated=false){
  const bar=document.getElementById('mobileReleaseBar');
@@ -961,7 +964,7 @@ function drawTrendChart(row){
 }
 
 const tradePrefs=new Map();
-const validTrails=['Stretto','Normale','Lungo','OFF'];
+const validTrails=['Stretto','Normale','Lungo','OFF','TP_PCT'];
 // Profili server-side: la distanza del trailing nativo coincide con lo SL iniziale.
 // SL MAX € è un budget stimato: Stretto/Normale applicano uno stop iniziale più vicino.
 // Non promettere trigger di attivazione, breakeven o trailing incrementali personalizzati.
@@ -969,7 +972,8 @@ const nativeTrailProfiles=Object.freeze({
  Stretto:{fraction:.45,enabled:true,label:'stretto · 45% dello SL max'},
  Normale:{fraction:.70,enabled:true,label:'normale · 70% dello SL max'},
  Lungo:{fraction:1,enabled:true,label:'lungo · 100% dello SL max'},
- OFF:{fraction:1,enabled:false,label:'spento · SL fisso'}
+ OFF:{fraction:1,enabled:false,label:'spento · SL fisso'},
+ TP_PCT:{fraction:1,enabled:false,label:'TP% gestito soltanto dal cBot'}
 });
 function nativeTrailProfile(value){
  const r=nativeTrailProfiles[value];
@@ -981,7 +985,7 @@ function prefsFor(symbol){
   if(tradePrefs.has(symbol))return tradePrefs.get(symbol);
   let stored=null;try{stored=JSON.parse(localStorage.getItem(prefKey(symbol))||'null')}catch{}
   const def={lot:Number($('globalLot').value)||0.01,sl:Number($('globalSl').value)||10,
-    slMode:'EUR',bufferPips:3,trail:$('globalTrail').value||'Stretto'};
+    slMode:'EUR',bufferPips:3,trail:$('globalTrail').value||'OFF'};
   const pref={lot:Number.isFinite(Number(stored?.lot))&&Number(stored.lot)>0?Number(stored.lot):def.lot,
     sl:Number.isFinite(Number(stored?.sl))&&Number(stored.sl)>0?Number(stored.sl):def.sl,
     slMode:stored?.slMode==='STR'?'STR':'EUR',
@@ -1265,6 +1269,23 @@ function applyCrtConfirmBars(value){
  render();
  return true;
 }
+const CRT_STRUCTURE_KEY='lmcrt:crtStructureFilter:v2';
+let crtStructureFilter=false;
+try{crtStructureFilter=localStorage.getItem(CRT_STRUCTURE_KEY)==='1'}catch{}
+const crtStructureToggleBtn=document.getElementById('crtStructureToggle');
+function syncCrtStructureToggle(){
+ if(!crtStructureToggleBtn)return;
+ crtStructureToggleBtn.textContent=crtStructureFilter?'ON · conferma struttura M5':'OFF · solo chiusure interne';
+ crtStructureToggleBtn.setAttribute('aria-pressed',String(crtStructureFilter));
+}
+syncCrtStructureToggle();
+crtStructureToggleBtn?.addEventListener('click',()=>{
+ crtStructureFilter=!crtStructureFilter;
+ try{localStorage.setItem(CRT_STRUCTURE_KEY,crtStructureFilter?'1':'0')}catch{}
+ if(chosen?.signalEngine==='crt'){chosen=null;document.getElementById('orderConfirm').disabled=true}
+ for(const market of app.results.values())if(market.crtH4)market.crt=evaluateCRT(market.crtH4,market.m5bars,Date.now(),crtConfirmBars);
+ syncCrtStructureToggle();render();
+});
 syncCrtConfirmPicker();
 crtConfirmPickerBtn.addEventListener('click',()=>{
  syncCrtConfirmPicker();
@@ -1280,46 +1301,35 @@ crtConfirmDialog.addEventListener('click',ev=>{
 });
 /* Only broker-native H4 (ProtoTimeframe.H4=18) may authorize CRT.
   Never substitute an aggregation that might differ from the broker's H4 session. */
+function selectCrtEffectiveH4(bars,now=Date.now()){
+ const closed=(bars||[]).filter(b=>b&&Number.isFinite(b.t)&&Number.isFinite(b.h)&&Number.isFinite(b.l)&&b.h>b.l&&b.t+CRT_H4_MS<=now).sort((a,b)=>a.t-b.t);
+ const last=closed.at(-1);if(!last)return null;
+ const previous=closed.at(-2);
+ const inside=!!(previous&&last.h<=previous.h&&last.l>=previous.l);
+ const selected=inside?previous:last;
+ return {...selected,latestClosedTime:last.t,insideH4:inside,source:inside?'H4 broker · ultima interna → precedente':'H4 broker · ultima chiusa'};
+}
 async function crtLastClosedH4(id){
  const now=Date.now(),cached=CRT_H4_CACHE.get(id);
- // Dopo la chiusura della H4 successiva non riusare per tre minuti il
- // vecchio range H4: chiedi subito il nuovo massimo/minimo al broker.
- const rolloverAt=cached?.h4?.t+2*CRT_H4_MS;
- const rolloverPending=Number.isFinite(rolloverAt)&&now>=rolloverAt;
- const fetchedAfterRollover=rolloverPending&&cached.fetchedAt>=rolloverAt;
- const refreshMs=rolloverPending?15000:180000;
- if(cached?.h4&&now-cached.fetchedAt<refreshMs&&
-   (!rolloverPending||fetchedAfterRollover))return cached.h4;
+ const latestOpen=cached?.h4?.latestClosedTime??cached?.h4?.t;
+ const rolloverAt=Number.isFinite(latestOpen)?latestOpen+2*CRT_H4_MS:0;
+ const due=now>=rolloverAt&&rolloverAt>0;
+ if(cached?.h4&&now-cached.fetchedAt<(due?15000:180000)&&(!due||cached.fetchedAt>=rolloverAt))return cached.h4;
  const known=HTF_CONTEXT_CACHE.get(id+':'+PLUGIN_TF.H4);
  if(known?.bars?.length&&now-(known.fetchedAt||0)<180000){
-  const bars=assertTrendbarCadence(known.bars,240,'H4');
-  const last=bars.filter(b=>b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now).at(-1);
-  if(last && !(now>=last.t+2*CRT_H4_MS)){
-   const h4={...last,source:'H4 broker · periodo 18'};
-   CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
-   return h4;
-  }
+  const bars=assertTrendbarCadence(known.bars,240,'H4'),h4=selectCrtEffectiveH4(bars,now);
+  if(h4&&now<h4.latestClosedTime+2*CRT_H4_MS){CRT_H4_CACHE.set(id,{fetchedAt:now,h4});return h4}
  }
  let lastError='Nessun dato H4 dal broker';
  for(const days of [7,21]){
   try{
-   const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{
-    symbolId:id,period:PLUGIN_TF.H4,fromTimestamp:now-days*86400000,
-    toTimestamp:now,count:days===21?125:55,type:0
-   }).pipe(take(1),timeout({first:6500})));
-   const bars=assertTrendbarCadence(barsFromProto(res),240,'H4')
-     .filter(b=>b&&b.t>0&&b.h>b.l&&b.t+CRT_H4_MS<=now);
-   const last=bars.at(-1);
-   if(last){
-    const h4={...last,source:'H4 broker · periodo 18'};
-    CRT_H4_CACHE.set(id,{fetchedAt:now,h4});
-    return h4;
-   }
+   const res=await firstValueFrom(SDK.getTrendbarList(app.adapter,{symbolId:id,period:PLUGIN_TF.H4,fromTimestamp:now-days*86400000,toTimestamp:now,count:days===21?125:55,type:0}).pipe(take(1),timeout({first:6500})));
+   const bars=assertTrendbarCadence(barsFromProto(res),240,'H4'),h4=selectCrtEffectiveH4(bars,now);
+   if(h4){CRT_H4_CACHE.set(id,{fetchedAt:now,h4});return h4}
    lastError='Nessuna H4 chiusa disponibile ('+days+' giorni)';
-  }catch(err){lastError=String(err?.message||err);console.warn('CRT H4',id,lastError);}
+  }catch(err){lastError=String(err?.message||err);console.warn('CRT H4',id,lastError)}
  }
- throw Error('CRT H4 non disponibile: '+lastError+
-  '. Per sicurezza non ricostruisco una H4 con candele di timeframe differenti.');
+ throw Error('CRT H4 non disponibile: '+lastError+'. Non ricostruisco H4 con altri timeframe.');
 }
 function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  const invalid={ready:false,status:'H4/M5 NON DISPONIBILI',stage:-1,side:null,progress:0,distance:Infinity,price:null};
@@ -1338,7 +1348,7 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
  for(const b of closed){
   // La rottura è la CHIUSURA M5 fuori dalla H4, non la wick e non una soglia pips.
   const highBreak=b.c>high,lowBreak=b.c<low;
-  const insideBody=b.o>low&&b.o<high&&b.c>low&&b.c<high;
+  const closeInside=b.c>low&&b.c<high;
   if(!side){
    if(highBreak||lowBreak){
     const nextSide=highBreak?'SELL':'BUY';
@@ -1368,11 +1378,11 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
   }
   if(side==='SELL'&&highBreak)breakoutExtreme=Math.max(breakoutExtreme,b.h);
   if(side==='BUY'&&lowBreak)breakoutExtreme=Math.min(breakoutExtreme,b.l);
-  if(insideBody){
+  if(closeInside){
    progress=lastInsideAt&&b.t-lastInsideAt===CRT_M5_MS?progress+1:1;
    lastInsideAt=b.t;
    if(progress===1){firstInsideHigh=b.h;firstInsideLow=b.l;}
-   if(progress===2){
+   if(progress===2&&crtStructureFilter){
     // Struttura obbligatoria sulla SECONDA M5 di rientro.
     const structurePass=side==='BUY'?b.c>firstInsideHigh:b.c<firstInsideLow;
     if(!structurePass){
@@ -1407,7 +1417,7 @@ function evaluateCRT(h4,source,now=Date.now(),required=crtConfirmBars){
   return {ready:true,h4,high,low,range,price,side:complete.side,stage:4,
    distance:Math.abs(price-(complete.side==='SELL'?high:low))/range,
    progress:required,confirmedAt:complete.at,breakoutAt:complete.breakoutAt,
-   breakoutExtreme:complete.breakoutExtreme,breakoutCount:2,status:'CONFERMATO + STRUTTURA M5 '+required+'/'+required,
+   breakoutExtreme:complete.breakoutExtreme,breakoutCount:2,status:'CONFERMATO '+required+'/'+required+(crtStructureFilter?' · STRUTTURA':' · CLOSE H4'),
    at:latest.t+CRT_M5_MS};
  if(pendingCount===1)return {ready:true,h4,high,low,range,price,side:pendingSide,stage:2,
   pendingBreak:true,breakoutCount:1,progress:0,distance,
@@ -2393,6 +2403,7 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMo
   spreadAssessment(name,q);
  if(!validSide(q,side))throw Error('Prezzo LIVE '+side+' non disponibile.');
  const entry=side==='BUY'?q.ask:q.bid;
+ if(trail==='TP_PCT'&&trailEngine!=='cbot')throw Error('Trail TP% richiede motore CBOT con LM CRT H4 PRO v4.36 in esecuzione.');
  const native=nativeTrailProfile(trail);
  const budget=slEuro*(trailEngine==='cbot'?1:native.fraction);
  if(!['EUR','STR'].includes(slMode))throw Error('Tipo SL non valido.');
@@ -2401,7 +2412,7 @@ async function buildOrderDraft(name,side,lot,slEuro,trail,onProgress=()=>{},slMo
   const verified=verifiedCRTBreakoutExtreme(row,side);
   calc=calculateStructuralBrokerSL(info,volume,verified.extreme,bufferPips,conversion,entry,side);
  }else calc=calculateBrokerSL(info,volume,budget,conversion,entry,side);
- const tag={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF'}[trail];
+ const tag={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF',TP_PCT:'TP'}[trail];
  const brokerSymbol=brokerNameForRow(row);
  if(trailEngine==='cbot'&&!brokerSymbol)throw Error('Simbolo broker non verificato: il cBot CRT non potrebbe riconoscere il trailing.');
  return {name,side,lot,slEuro,slMode,bufferPips,trail,tag,symbolId:row.id,volume,
@@ -2560,7 +2571,7 @@ async function submitMarketOrder(){
     relativeStopLoss:chosen.relativeUnits,trailingStopLoss:chosen.nativeTrailing,label:chosen.label,
     // Per lo SL strutturale CRT allega il target ASSOLUTO come metadato.
     // Lo SL iniziale e' comunque relativo ed e' inviato NELLO STESSO ordine.
-    // Il cBot v4.6 (modalita' CBOT) puo' rimettere lo SL oltre la M5
+    // Il cBot v4.36 (modalita' CBOT) puo' rimettere lo SL oltre la M5
     // piu' estrema dopo il fill, se necessario per via dello slippage.
     comment:chosen.signalEngine==='crt'&&chosen.slMode==='STR'?
       'LMCRTSTR1|'+chosen.side+'|'+chosen.structuralStopTarget.toFixed(chosen.digits)+
@@ -2768,15 +2779,16 @@ document.addEventListener('click',async event=>{
    draft.trendGate=signalGate;
   }
   draft.signalEngine=signalEngine;
-  // SOLO CRT e SOLO motore CBOT: il cBot v4.6 usa le stesse etichette protocollo v3.3.
+  // SOLO CRT e SOLO motore CBOT: il cBot v4.36 usa le stesse etichette protocollo v3.3.
   // Modalita' fissata nella singola posizione, senza gestire ordini manuali nativi.
   if(signalEngine==='crt'&&draft.engine==='cbot'){
-   const code={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF'}[draft.trail];
+   const code={Stretto:'ST',Normale:'MD',Lungo:'LU',OFF:'OFF',TP_PCT:'TP'}[draft.trail];
    if(!code)throw Error('Trailing MobileApp non valido per cBot CRT v4.6.');
    draft.label='LMCRT33_MOB_'+code+'_'+draft.name;
    draft.nativeTrailing=false;
-   draft.profileText=code==='OFF'?'CBOT CRT v4.6 · OFF':
-    'CBOT CRT v4.6 · '+(code==='ST'?'Stretto +2/+1 €':code==='MD'?'Medio +4/+2 €':'Lungo +6/+3 €');
+   draft.profileText=code==='OFF'?'CBOT CRT v4.36 · OFF':
+    code==='TP'?'CBOT CRT v4.36 · TP% (soglie dal cBot per questo simbolo)':
+    'CBOT CRT v4.36 · '+(code==='ST'?'Stretto +2/+1 €':code==='MD'?'Medio +4/+2 €':'Lungo +6/+3 €');
   }
   chosen=draft;
   prepareCbotAck(draft.engine);
